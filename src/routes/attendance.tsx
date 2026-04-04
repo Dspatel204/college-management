@@ -20,13 +20,14 @@ function AttendancePage() {
   const [marking, setMarking] = useState<Record<string, "present" | "absent" | "late">>({});
   const [saved, setSaved] = useState(false);
 
+  // Initialize marking from existing records
   useEffect(() => {
-    if (!isAuthenticated) navigate({ to: "/login" });
+    if (!isAuthenticated) {
+      navigate({ to: "/login" });
+      return;
+    }
   }, [isAuthenticated, navigate]);
 
-  if (!isAuthenticated) return null;
-
-  // Initialize marking from existing records
   useEffect(() => {
     const existing: Record<string, "present" | "absent" | "late"> = {};
     records
