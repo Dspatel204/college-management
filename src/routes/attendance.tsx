@@ -39,6 +39,8 @@ function AttendancePage() {
     setSaved(false);
   }, [selectedDate, selectedSubject, records]);
 
+  if (!isAuthenticated) return null;
+
   const toggleStatus = (studentId: string) => {
     setMarking((prev) => {
       const current = prev[studentId] || "present";
