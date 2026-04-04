@@ -1,12 +1,15 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
-import { LayoutDashboard, Users, ClipboardCheck, BookOpen, Settings, LogOut, GraduationCap } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardCheck, BookOpen, Settings, LogOut, GraduationCap, IndianRupee, FileText, BarChart3 } from "lucide-react";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/students", label: "Students", icon: Users },
   { to: "/attendance", label: "Attendance", icon: ClipboardCheck },
-  { to: "/subjects", label: "Subjects", icon: BookOpen },
+  { to: "/fees", label: "Fee Management", icon: IndianRupee },
+  { to: "/exams", label: "Examinations", icon: FileText },
+  { to: "/courses", label: "Courses", icon: BookOpen },
+  { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
@@ -28,7 +31,7 @@ export function AppSidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {navItems.map((item) => {
           const isActive = location.pathname === item.to;
           return (

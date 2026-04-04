@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatsCard } from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { STUDENTS, INITIAL_ATTENDANCE, DEPARTMENTS } from "@/lib/college-data";
-import { Users, ClipboardCheck, BookOpen, Building2, TrendingUp, Clock } from "lucide-react";
+import { STUDENTS, INITIAL_ATTENDANCE, INITIAL_FEES, DEPARTMENTS, COURSES } from "@/lib/college-data";
+import { Users, ClipboardCheck, BookOpen, Building2, TrendingUp, Clock, IndianRupee, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -27,15 +27,20 @@ function DashboardPage() {
   const totalToday = todayAttendance.length;
   const attendanceRate = totalToday > 0 ? Math.round((presentToday / totalToday) * 100) : 0;
 
+  const totalFees = INITIAL_FEES.reduce((s, f) => s + f.amount, 0);
+  const collectedFees = INITIAL_FEES.reduce((s, f) => s + f.paid, 0);
+  const pendingFees = totalFees - collectedFees;
+
   const deptCounts = DEPARTMENTS.map((d) => ({
     name: d,
     count: STUDENTS.filter((s) => s.department === d).length,
   }));
 
   const recentActivity = [
+    { action: "Fee collected", detail: "Rahul Kumar — Tuition ₹50,000", time: "5 min ago", icon: IndianRupee },
     { action: "Attendance marked", detail: "Data Structures — Sem 4 CS", time: "10 min ago", icon: ClipboardCheck },
     { action: "New student enrolled", detail: "Kavita Nair — Civil Eng", time: "1 hour ago", icon: Users },
-    { action: "Exam scheduled", detail: "DBMS Mid-term — 15 April", time: "2 hours ago", icon: BookOpen },
+    { action: "Exam scheduled", detail: "DBMS Mid-term — 15 April", time: "2 hours ago", icon: FileText },
     { action: "Result published", detail: "Mathematics — Sem 2", time: "5 hours ago", icon: TrendingUp },
   ];
 
@@ -50,34 +55,10 @@ function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Total Students"
-          value={STUDENTS.length}
-          subtitle="Across all departments"
-          icon={Users}
-          trend={{ value: "12% this semester", positive: true }}
-        />
-        <StatsCard
-          title="Today's Attendance"
-          value={`${attendanceRate}%`}
-          subtitle={`${presentToday}/${totalToday} students`}
-          icon={ClipboardCheck}
-          colorClass="bg-success"
-        />
-        <StatsCard
-          title="Departments"
-          value={DEPARTMENTS.length}
-          subtitle="Active departments"
-          icon={Building2}
-          colorClass="bg-info"
-        />
-        <StatsCard
-          title="Subjects"
-          value={5}
-          subtitle="This semester"
-          icon={BookOpen}
-          colorClass="bg-accent"
-        />
+        <StatsCard title="Total Students" value={STUDENTS.length} subtitle="Across all departments" icon={Users} trend={{ value: "12% this semester", positive: true }} />
+        <StatsCard title="Today's Attendance" value={`${attendanceRate}%`} subtitle={`${presentToday}/${totalToday} students`} icon={ClipboardCheck} colorClass="bg-success" />
+        <StatsCard title="Fee Collected" value={`₹${(collectedFees / 1000).toFixed(0)}K`} subtitle={`₹${(pendingFees / 1000).toFixed(0)}K pending`} icon={IndianRupee} colorClass="bg-info" />
+        <StatsCard title="Active Courses" value={COURSES.length} subtitle={`${DEPARTMENTS.length} departments`} icon={BookOpen} colorClass="bg-accent" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -93,10 +74,7 @@ function DashboardPage() {
                   <div className="w-36 text-sm font-medium text-foreground truncate">{d.name}</div>
                   <div className="flex-1">
                     <div className="h-3 rounded-full bg-secondary">
-                      <div
-                        className="h-3 rounded-full bg-primary transition-all"
-                        style={{ width: `${(d.count / STUDENTS.length) * 100}%` }}
-                      />
+                      <div className="h-3 rounded-full bg-primary transition-all" style={{ width: `${(d.count / STUDENTS.length) * 100}%` }} />
                     </div>
                   </div>
                   <span className="w-8 text-right text-sm font-semibold text-foreground">{d.count}</span>
