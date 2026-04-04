@@ -12,8 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubjectsRouteImport } from './routes/subjects'
 import { Route as StudentsRouteImport } from './routes/students'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as FeesRouteImport } from './routes/fees'
+import { Route as ExamsRouteImport } from './routes/exams'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as AttendanceRouteImport } from './routes/attendance'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -32,14 +36,34 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeesRoute = FeesRouteImport.update({
+  id: '/fees',
+  path: '/fees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExamsRoute = ExamsRouteImport.update({
+  id: '/exams',
+  path: '/exams',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoursesRoute = CoursesRouteImport.update({
+  id: '/courses',
+  path: '/courses',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AttendanceRoute = AttendanceRouteImport.update({
@@ -56,8 +80,12 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/attendance': typeof AttendanceRoute
+  '/courses': typeof CoursesRoute
   '/dashboard': typeof DashboardRoute
+  '/exams': typeof ExamsRoute
+  '/fees': typeof FeesRoute
   '/login': typeof LoginRoute
+  '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/students': typeof StudentsRoute
   '/subjects': typeof SubjectsRoute
@@ -65,8 +93,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/attendance': typeof AttendanceRoute
+  '/courses': typeof CoursesRoute
   '/dashboard': typeof DashboardRoute
+  '/exams': typeof ExamsRoute
+  '/fees': typeof FeesRoute
   '/login': typeof LoginRoute
+  '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/students': typeof StudentsRoute
   '/subjects': typeof SubjectsRoute
@@ -75,8 +107,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/attendance': typeof AttendanceRoute
+  '/courses': typeof CoursesRoute
   '/dashboard': typeof DashboardRoute
+  '/exams': typeof ExamsRoute
+  '/fees': typeof FeesRoute
   '/login': typeof LoginRoute
+  '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/students': typeof StudentsRoute
   '/subjects': typeof SubjectsRoute
@@ -86,8 +122,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/attendance'
+    | '/courses'
     | '/dashboard'
+    | '/exams'
+    | '/fees'
     | '/login'
+    | '/reports'
     | '/settings'
     | '/students'
     | '/subjects'
@@ -95,8 +135,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/attendance'
+    | '/courses'
     | '/dashboard'
+    | '/exams'
+    | '/fees'
     | '/login'
+    | '/reports'
     | '/settings'
     | '/students'
     | '/subjects'
@@ -104,8 +148,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/attendance'
+    | '/courses'
     | '/dashboard'
+    | '/exams'
+    | '/fees'
     | '/login'
+    | '/reports'
     | '/settings'
     | '/students'
     | '/subjects'
@@ -114,8 +162,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AttendanceRoute: typeof AttendanceRoute
+  CoursesRoute: typeof CoursesRoute
   DashboardRoute: typeof DashboardRoute
+  ExamsRoute: typeof ExamsRoute
+  FeesRoute: typeof FeesRoute
   LoginRoute: typeof LoginRoute
+  ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   StudentsRoute: typeof StudentsRoute
   SubjectsRoute: typeof SubjectsRoute
@@ -144,6 +196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -151,11 +210,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fees': {
+      id: '/fees'
+      path: '/fees'
+      fullPath: '/fees'
+      preLoaderRoute: typeof FeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/exams': {
+      id: '/exams'
+      path: '/exams'
+      fullPath: '/exams'
+      preLoaderRoute: typeof ExamsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/courses': {
+      id: '/courses'
+      path: '/courses'
+      fullPath: '/courses'
+      preLoaderRoute: typeof CoursesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/attendance': {
@@ -178,8 +258,12 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AttendanceRoute: AttendanceRoute,
+  CoursesRoute: CoursesRoute,
   DashboardRoute: DashboardRoute,
+  ExamsRoute: ExamsRoute,
+  FeesRoute: FeesRoute,
   LoginRoute: LoginRoute,
+  ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   StudentsRoute: StudentsRoute,
   SubjectsRoute: SubjectsRoute,
