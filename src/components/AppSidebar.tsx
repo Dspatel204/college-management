@@ -1,6 +1,10 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
-import { LayoutDashboard, Users, ClipboardCheck, BookOpen, Settings, LogOut, GraduationCap, IndianRupee, FileText, BarChart3, UserCog } from "lucide-react";
+import {
+  LayoutDashboard, Users, ClipboardCheck, BookOpen, Settings, LogOut,
+  GraduationCap, IndianRupee, FileText, BarChart3, UserCog,
+  Megaphone, Library, Bus, MessageSquare,
+} from "lucide-react";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -10,6 +14,10 @@ const navItems = [
   { to: "/fees", label: "Fee Management", icon: IndianRupee },
   { to: "/exams", label: "Examinations", icon: FileText },
   { to: "/courses", label: "Courses", icon: BookOpen },
+  { to: "/library", label: "Library", icon: Library },
+  { to: "/transport", label: "Transport", icon: Bus },
+  { to: "/notices", label: "Notice Board", icon: Megaphone },
+  { to: "/messages", label: "Messages", icon: MessageSquare },
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
@@ -29,13 +37,13 @@ export function AppSidebar() {
           <p className="text-xs text-sidebar-accent-foreground/60">Management System</p>
         </div>
       </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         {navItems.map((item) => {
           const isActive = location.pathname === item.to;
           return (
             <Link key={item.to} to={item.to}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${isActive ? "bg-sidebar-accent text-sidebar-primary" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"}`}>
-              <item.icon className="h-5 w-5" />{item.label}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${isActive ? "bg-sidebar-accent text-sidebar-primary" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"}`}>
+              <item.icon className="h-4.5 w-4.5" />{item.label}
             </Link>
           );
         })}
