@@ -7,6 +7,38 @@ export interface Student {
   email: string;
   phone: string;
   avatar: string;
+  admissionDate?: string;
+  address?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  status?: "active" | "inactive" | "graduated";
+  enrolledCourses?: string[];
+}
+
+export interface Faculty {
+  id: string;
+  name: string;
+  employeeId: string;
+  department: string;
+  designation: string;
+  email: string;
+  phone: string;
+  avatar: string;
+  assignedSubjects: string[];
+  assignedClasses: string[];
+  qualification: string;
+  joinDate: string;
+}
+
+export interface TimetableEntry {
+  id: string;
+  day: string;
+  time: string;
+  subject: string;
+  facultyId: string;
+  department: string;
+  semester: number;
+  room: string;
 }
 
 export interface AttendanceRecord {
@@ -64,17 +96,55 @@ export const DEPARTMENTS = ["Computer Science", "Electronics", "Mechanical", "Ci
 
 export const SUBJECTS = ["Data Structures", "Operating Systems", "DBMS", "Computer Networks", "Mathematics"];
 
+export const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+export const TIME_SLOTS = [
+  "9:00 - 10:00",
+  "10:00 - 11:00",
+  "11:00 - 12:00",
+  "12:00 - 1:00",
+  "2:00 - 3:00",
+  "3:00 - 4:00",
+  "4:00 - 5:00",
+];
+
 export const STUDENTS: Student[] = [
-  { id: "s1", name: "Rahul Kumar", rollNo: "CS2024001", department: "Computer Science", semester: 4, email: "rahul@college.com", phone: "9876543210", avatar: "RK" },
-  { id: "s2", name: "Priya Singh", rollNo: "CS2024002", department: "Computer Science", semester: 4, email: "priya@college.com", phone: "9876543211", avatar: "PS" },
-  { id: "s3", name: "Amit Patel", rollNo: "CS2024003", department: "Computer Science", semester: 4, email: "amit@college.com", phone: "9876543212", avatar: "AP" },
-  { id: "s4", name: "Neha Sharma", rollNo: "EC2024001", department: "Electronics", semester: 4, email: "neha@college.com", phone: "9876543213", avatar: "NS" },
-  { id: "s5", name: "Vikram Joshi", rollNo: "ME2024001", department: "Mechanical", semester: 4, email: "vikram@college.com", phone: "9876543214", avatar: "VJ" },
-  { id: "s6", name: "Sneha Reddy", rollNo: "CS2024004", department: "Computer Science", semester: 2, email: "sneha@college.com", phone: "9876543215", avatar: "SR" },
-  { id: "s7", name: "Arjun Verma", rollNo: "EC2024002", department: "Electronics", semester: 2, email: "arjun@college.com", phone: "9876543216", avatar: "AV" },
-  { id: "s8", name: "Kavita Nair", rollNo: "CE2024001", department: "Civil", semester: 6, email: "kavita@college.com", phone: "9876543217", avatar: "KN" },
-  { id: "s9", name: "Rohit Mehta", rollNo: "EE2024001", department: "Electrical", semester: 6, email: "rohit@college.com", phone: "9876543218", avatar: "RM" },
-  { id: "s10", name: "Ananya Das", rollNo: "CS2024005", department: "Computer Science", semester: 6, email: "ananya@college.com", phone: "9876543219", avatar: "AD" },
+  { id: "s1", name: "Rahul Kumar", rollNo: "CS2024001", department: "Computer Science", semester: 4, email: "rahul@college.com", phone: "9876543210", avatar: "RK", admissionDate: "2022-07-15", address: "123 Main St, Delhi", guardianName: "Suresh Kumar", guardianPhone: "9876000001", status: "active", enrolledCourses: ["c1", "c2", "c3"] },
+  { id: "s2", name: "Priya Singh", rollNo: "CS2024002", department: "Computer Science", semester: 4, email: "priya@college.com", phone: "9876543211", avatar: "PS", admissionDate: "2022-07-15", address: "456 Park Ave, Mumbai", guardianName: "Rajesh Singh", guardianPhone: "9876000002", status: "active", enrolledCourses: ["c1", "c2"] },
+  { id: "s3", name: "Amit Patel", rollNo: "CS2024003", department: "Computer Science", semester: 4, email: "amit@college.com", phone: "9876543212", avatar: "AP", admissionDate: "2022-07-16", address: "789 Lake Rd, Ahmedabad", guardianName: "Dinesh Patel", guardianPhone: "9876000003", status: "active", enrolledCourses: ["c1", "c3"] },
+  { id: "s4", name: "Neha Sharma", rollNo: "EC2024001", department: "Electronics", semester: 4, email: "neha@college.com", phone: "9876543213", avatar: "NS", admissionDate: "2022-07-17", address: "321 Hill View, Pune", guardianName: "Vinod Sharma", guardianPhone: "9876000004", status: "active", enrolledCourses: ["c6", "c7"] },
+  { id: "s5", name: "Vikram Joshi", rollNo: "ME2024001", department: "Mechanical", semester: 4, email: "vikram@college.com", phone: "9876543214", avatar: "VJ", admissionDate: "2022-07-18", address: "654 Green Park, Jaipur", guardianName: "Mohan Joshi", guardianPhone: "9876000005", status: "active", enrolledCourses: ["c8"] },
+  { id: "s6", name: "Sneha Reddy", rollNo: "CS2024004", department: "Computer Science", semester: 2, email: "sneha@college.com", phone: "9876543215", avatar: "SR", admissionDate: "2023-07-15", address: "987 Temple St, Hyderabad", guardianName: "Venkat Reddy", guardianPhone: "9876000006", status: "active", enrolledCourses: ["c5"] },
+  { id: "s7", name: "Arjun Verma", rollNo: "EC2024002", department: "Electronics", semester: 2, email: "arjun@college.com", phone: "9876543216", avatar: "AV", admissionDate: "2023-07-16", address: "147 Station Rd, Bangalore", guardianName: "Anil Verma", guardianPhone: "9876000007", status: "active", enrolledCourses: ["c6"] },
+  { id: "s8", name: "Kavita Nair", rollNo: "CE2024001", department: "Civil", semester: 6, email: "kavita@college.com", phone: "9876543217", avatar: "KN", admissionDate: "2021-07-15", address: "258 Beach Rd, Kochi", guardianName: "Ramesh Nair", guardianPhone: "9876000008", status: "active", enrolledCourses: ["c9"] },
+  { id: "s9", name: "Rohit Mehta", rollNo: "EE2024001", department: "Electrical", semester: 6, email: "rohit@college.com", phone: "9876543218", avatar: "RM", admissionDate: "2021-07-16", address: "369 River View, Lucknow", guardianName: "Prakash Mehta", guardianPhone: "9876000009", status: "active", enrolledCourses: ["c10"] },
+  { id: "s10", name: "Ananya Das", rollNo: "CS2024005", department: "Computer Science", semester: 6, email: "ananya@college.com", phone: "9876543219", avatar: "AD", admissionDate: "2021-07-17", address: "741 Market St, Kolkata", guardianName: "Subhash Das", guardianPhone: "9876000010", status: "active", enrolledCourses: ["c4"] },
+];
+
+export const FACULTY: Faculty[] = [
+  { id: "f1", name: "Prof. Gupta", employeeId: "FAC001", department: "Computer Science", designation: "Professor", email: "gupta@college.com", phone: "9800000001", avatar: "PG", assignedSubjects: ["Data Structures"], assignedClasses: ["CS Sem-4"], qualification: "Ph.D. Computer Science", joinDate: "2010-08-01" },
+  { id: "f2", name: "Dr. Sharma", employeeId: "FAC002", department: "Computer Science", designation: "Associate Professor", email: "sharma@college.com", phone: "9800000002", avatar: "DS", assignedSubjects: ["Operating Systems"], assignedClasses: ["CS Sem-4"], qualification: "Ph.D. Systems Engineering", joinDate: "2012-07-15" },
+  { id: "f3", name: "Prof. Mishra", employeeId: "FAC003", department: "Computer Science", designation: "Professor", email: "mishra@college.com", phone: "9800000003", avatar: "PM", assignedSubjects: ["DBMS"], assignedClasses: ["CS Sem-4", "CE Sem-6"], qualification: "Ph.D. Database Systems", joinDate: "2008-01-10" },
+  { id: "f4", name: "Dr. Verma", employeeId: "FAC004", department: "Computer Science", designation: "Assistant Professor", email: "verma@college.com", phone: "9800000004", avatar: "DV", assignedSubjects: ["Computer Networks"], assignedClasses: ["CS Sem-6"], qualification: "Ph.D. Networking", joinDate: "2015-06-20" },
+  { id: "f5", name: "Prof. Rao", employeeId: "FAC005", department: "Computer Science", designation: "Professor", email: "rao@college.com", phone: "9800000005", avatar: "PR", assignedSubjects: ["Mathematics"], assignedClasses: ["CS Sem-2"], qualification: "Ph.D. Applied Mathematics", joinDate: "2005-08-01" },
+  { id: "f6", name: "Dr. Iyer", employeeId: "FAC006", department: "Electronics", designation: "Associate Professor", email: "iyer@college.com", phone: "9800000006", avatar: "DI", assignedSubjects: ["Digital Electronics"], assignedClasses: ["EC Sem-2"], qualification: "Ph.D. VLSI Design", joinDate: "2011-07-01" },
+  { id: "f7", name: "Prof. Nair", employeeId: "FAC007", department: "Electronics", designation: "Professor", email: "nair@college.com", phone: "9800000007", avatar: "PN", assignedSubjects: ["Signal Processing"], assignedClasses: ["EC Sem-4"], qualification: "Ph.D. Signal Processing", joinDate: "2009-08-15" },
+  { id: "f8", name: "Dr. Singh", employeeId: "FAC008", department: "Mechanical", designation: "Professor", email: "singh@college.com", phone: "9800000008", avatar: "DrS", assignedSubjects: ["Thermodynamics"], assignedClasses: ["ME Sem-4"], qualification: "Ph.D. Thermal Engineering", joinDate: "2007-01-05" },
+];
+
+export const INITIAL_TIMETABLE: TimetableEntry[] = [
+  { id: "tt1", day: "Monday", time: "9:00 - 10:00", subject: "Data Structures", facultyId: "f1", department: "Computer Science", semester: 4, room: "CS-101" },
+  { id: "tt2", day: "Monday", time: "10:00 - 11:00", subject: "Operating Systems", facultyId: "f2", department: "Computer Science", semester: 4, room: "CS-102" },
+  { id: "tt3", day: "Monday", time: "11:00 - 12:00", subject: "DBMS", facultyId: "f3", department: "Computer Science", semester: 4, room: "CS-103" },
+  { id: "tt4", day: "Tuesday", time: "9:00 - 10:00", subject: "Mathematics", facultyId: "f5", department: "Computer Science", semester: 2, room: "CS-201" },
+  { id: "tt5", day: "Tuesday", time: "10:00 - 11:00", subject: "Data Structures", facultyId: "f1", department: "Computer Science", semester: 4, room: "CS-101" },
+  { id: "tt6", day: "Wednesday", time: "9:00 - 10:00", subject: "Computer Networks", facultyId: "f4", department: "Computer Science", semester: 6, room: "CS-301" },
+  { id: "tt7", day: "Wednesday", time: "11:00 - 12:00", subject: "Operating Systems", facultyId: "f2", department: "Computer Science", semester: 4, room: "CS-102" },
+  { id: "tt8", day: "Thursday", time: "9:00 - 10:00", subject: "Digital Electronics", facultyId: "f6", department: "Electronics", semester: 2, room: "EC-101" },
+  { id: "tt9", day: "Thursday", time: "10:00 - 11:00", subject: "Signal Processing", facultyId: "f7", department: "Electronics", semester: 4, room: "EC-201" },
+  { id: "tt10", day: "Friday", time: "9:00 - 10:00", subject: "Thermodynamics", facultyId: "f8", department: "Mechanical", semester: 4, room: "ME-101" },
+  { id: "tt11", day: "Friday", time: "10:00 - 11:00", subject: "DBMS", facultyId: "f3", department: "Computer Science", semester: 4, room: "CS-103" },
+  { id: "tt12", day: "Friday", time: "2:00 - 3:00", subject: "Data Structures", facultyId: "f1", department: "Computer Science", semester: 4, room: "Lab-1" },
 ];
 
 const today = new Date().toISOString().split("T")[0];
@@ -154,6 +224,10 @@ export function getStudentName(id: string): string {
 
 export function getStudentById(id: string): Student | undefined {
   return STUDENTS.find((s) => s.id === id);
+}
+
+export function getFacultyById(id: string): Faculty | undefined {
+  return FACULTY.find((f) => f.id === id);
 }
 
 export function calculateGrade(percentage: number): string {
