@@ -3,6 +3,7 @@ import { defineConfig, loadEnv } from "vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { nitro } from "nitro/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { componentTagger } from "lovable-tagger";
@@ -161,9 +162,8 @@ function devServerFnErrorLogger() {
 }
 
 export default defineConfig(({ command, mode }) => {
-  // Use Cloudflare Workers plugin for builds (produces worker output)
-  // Skip for dev server (command=serve) since workerd runtime isn't available
-  const useCloudflare = command === "build";
+  const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
+  const useCloudflare = !isVercel && command === "build";
 
   const env = loadEnv(mode, process.cwd(), "VITE_");
   const envDefine: Record<string, string> = {};
@@ -191,9 +191,10 @@ export default defineConfig(({ command, mode }) => {
       devClientErrorLogger(),
       devServerFnErrorLogger(),
       ...(useCloudflare ? [cloudflare({ viteEnvironment: { name: "ssr" } })] : []),
+      nitro(),
       tanstackStart(),
       viteReact(),
-      mode === "development" && componentTagger(),
+      mode === "development" && !isVercel && componentTagger(),
     ].filter(Boolean),
   };
 });
