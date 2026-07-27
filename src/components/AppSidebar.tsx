@@ -1,9 +1,10 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/lib/theme-provider";
 import {
   LayoutDashboard, Users, ClipboardCheck, BookOpen, Settings, LogOut,
   GraduationCap, IndianRupee, FileText, BarChart3, UserCog,
-  Megaphone, Library, Bus, MessageSquare,
+  Megaphone, Library, Bus, MessageSquare, Sun, Moon,
 } from "lucide-react";
 
 const navItems = [
@@ -25,6 +26,11 @@ const navItems = [
 export function AppSidebar() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
+
+  const toggleTheme = () => {
+    setTheme(theme === "light" ? "dark" : "light");
+  };
 
   return (
     <aside className="fixed left-0 top-0 z-30 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
@@ -32,10 +38,16 @@ export function AppSidebar() {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-primary">
           <GraduationCap className="h-6 w-6 text-sidebar-primary-foreground" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-base font-bold tracking-tight">CollegeHub</h1>
           <p className="text-xs text-sidebar-accent-foreground/60">Management System</p>
         </div>
+        <button
+          onClick={toggleTheme}
+          className="rounded-lg p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+        >
+          {theme === "light" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
         {navItems.map((item) => {
