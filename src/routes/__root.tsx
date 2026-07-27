@@ -1,5 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth-context";
+import { ThemeProvider } from "@/lib/theme-provider";
+import { AIChatBubble } from "@/components/AIChatBubble";
 
 import appCss from "../styles.css?url";
 
@@ -55,7 +57,7 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="light">
       <head>
         <HeadContent />
       </head>
@@ -69,8 +71,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <AuthProvider>
-      <Outlet />
-    </AuthProvider>
+    <ThemeProvider defaultTheme="light">
+      <AuthProvider>
+        <Outlet />
+        <AIChatBubble />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
