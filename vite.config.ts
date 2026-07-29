@@ -183,6 +183,7 @@ export default defineConfig(({ command, mode }) => {
       },
       dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
     },
+    publicDir: "public",
     plugins: [
       tailwindcss(),
       tsConfigPaths({
