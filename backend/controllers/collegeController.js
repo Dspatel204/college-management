@@ -9,52 +9,306 @@ const {
   courses
 } = require('../models/collegeData');
 
+let studentStore = [...students];
+let facultyStore = [...faculty];
+let timetableStore = [...timetable];
+let attendanceStore = [...attendance];
+let feeStore = [...fees];
+let examScheduleStore = [...examSchedules];
+let examResultStore = [...examResults];
+let courseStore = [...courses];
+
+const calculateGrade = (percentage) => {
+  if (percentage >= 90) return 'A+';
+  if (percentage >= 80) return 'A';
+  if (percentage >= 70) return 'B+';
+  if (percentage >= 60) return 'B';
+  if (percentage >= 50) return 'C';
+  if (percentage >= 40) return 'D';
+  return 'F';
+};
+
 const getStudents = (req, res) => {
-  res.json(students);
+  res.json(studentStore);
 };
 
 const getStudentById = (req, res) => {
-  const student = students.find((item) => item.id === req.params.id);
+  const student = studentStore.find((item) => item.id === req.params.id);
   if (!student) return res.status(404).json({ message: 'Student not found' });
   res.json(student);
 };
 
+const createStudent = (req, res) => {
+  if (!req.body.name || !req.body.rollNo || !req.body.email || !req.body.phone) {
+    return res.status(400).json({ message: 'Required fields missing' });
+  }
+
+  const student = {
+    id: `s${Date.now()}`,
+    ...req.body,
+    status: req.body.status || 'active'
+  };
+
+  studentStore.push(student);
+  res.status(201).json(student);
+};
+
+const updateStudent = (req, res) => {
+  const index = studentStore.findIndex((item) => item.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Student not found' });
+
+  studentStore[index] = { ...studentStore[index], ...req.body };
+  res.json(studentStore[index]);
+};
+
+const deleteStudent = (req, res) => {
+  const index = studentStore.findIndex((item) => item.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Student not found' });
+
+  studentStore.splice(index, 1);
+  res.json({ message: 'Student deleted successfully' });
+};
+
 const getFaculty = (req, res) => {
-  res.json(faculty);
+  res.json(facultyStore);
+};
+
+const getFacultyById = (req, res) => {
+  const item = facultyStore.find((entry) => entry.id === req.params.id);
+  if (!item) return res.status(404).json({ message: 'Faculty not found' });
+  res.json(item);
+};
+
+const createFaculty = (req, res) => {
+  if (!req.body.name || !req.body.employeeId || !req.body.email || !req.body.phone) {
+    return res.status(400).json({ message: 'Required fields missing' });
+  }
+
+  const item = {
+    id: `f${Date.now()}`,
+    ...req.body,
+    assignedSubjects: req.body.assignedSubjects || [],
+    assignedClasses: req.body.assignedClasses || []
+  };
+
+  facultyStore.push(item);
+  res.status(201).json(item);
+};
+
+const updateFaculty = (req, res) => {
+  const index = facultyStore.findIndex((entry) => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Faculty not found' });
+
+  facultyStore[index] = { ...facultyStore[index], ...req.body };
+  res.json(facultyStore[index]);
+};
+
+const deleteFaculty = (req, res) => {
+  const index = facultyStore.findIndex((entry) => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Faculty not found' });
+
+  facultyStore.splice(index, 1);
+  res.json({ message: 'Faculty deleted successfully' });
 };
 
 const getTimetable = (req, res) => {
-  res.json(timetable);
+  res.json(timetableStore);
+};
+
+const createTimetableEntry = (req, res) => {
+  if (!req.body.day || !req.body.time || !req.body.subject || !req.body.facultyId || !req.body.room) {
+    return res.status(400).json({ message: 'Required fields missing' });
+  }
+
+  const entry = {
+    id: `tt${Date.now()}`,
+    ...req.body
+  };
+
+  timetableStore.push(entry);
+  res.status(201).json(entry);
+};
+
+const deleteTimetableEntry = (req, res) => {
+  const index = timetableStore.findIndex((entry) => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Timetable entry not found' });
+
+  timetableStore.splice(index, 1);
+  res.json({ message: 'Timetable entry deleted successfully' });
 };
 
 const getAttendance = (req, res) => {
-  res.json(attendance);
+  const { date, subject } = req.query;
+  let result = attendanceStore;
+
+  if (date) result = result.filter((entry) => entry.date === date);
+  if (subject) result = result.filter((entry) => entry.subject === subject);
+
+  res.json(result);
+};
+
+const saveAttendance = (req, res) => {
+  const { date, subject, records = [] } = req.body;
+  if (!date || !subject) {
+    return res.status(400).json({ message: 'Date and subject are required' });
+  }
+
+  attendanceStore = attendanceStore.filter((entry) => !(entry.date === date && entry.subject === subject));
+  const nextRecords = records.map((record) => ({ ...record, date, subject }));
+  attendanceStore = [...attendanceStore, ...nextRecords];
+
+  res.status(201).json(nextRecords);
 };
 
 const getFees = (req, res) => {
-  res.json(fees);
+  res.json(feeStore);
+};
+
+const createFee = (req, res) => {
+  if (!req.body.studentId || !req.body.amount) {
+    return res.status(400).json({ message: 'Student and amount are required' });
+  }
+
+  const amount = Number(req.body.amount);
+  const paid = Number(req.body.paid ?? amount);
+  const fee = {
+    id: `f${Date.now()}`,
+    studentId: req.body.studentId,
+    type: req.body.type || 'tuition',
+    amount,
+    paid,
+    dueDate: req.body.dueDate || new Date().toISOString().split('T')[0],
+    paidDate: req.body.paidDate || new Date().toISOString().split('T')[0],
+    status: req.body.status || (paid >= amount ? 'paid' : paid > 0 ? 'partial' : 'pending'),
+    receiptNo: req.body.receiptNo || `REC-${Date.now().toString().slice(-6)}`
+  };
+
+  feeStore.push(fee);
+  res.status(201).json(fee);
+};
+
+const updateFee = (req, res) => {
+  const index = feeStore.findIndex((entry) => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Fee record not found' });
+
+  feeStore[index] = { ...feeStore[index], ...req.body };
+  res.json(feeStore[index]);
 };
 
 const getExamSchedules = (req, res) => {
-  res.json(examSchedules);
+  res.json(examScheduleStore);
+};
+
+const createExamSchedule = (req, res) => {
+  if (!req.body.subject || !req.body.date || !req.body.time || !req.body.room) {
+    return res.status(400).json({ message: 'Required fields missing' });
+  }
+
+  const entry = {
+    id: `e${Date.now()}`,
+    department: 'Computer Science',
+    semester: 4,
+    type: 'midterm',
+    ...req.body
+  };
+
+  examScheduleStore.push(entry);
+  res.status(201).json(entry);
 };
 
 const getExamResults = (req, res) => {
-  res.json(examResults);
+  res.json(examResultStore);
+};
+
+const createExamResult = (req, res) => {
+  if (!req.body.studentId || !req.body.subject || !req.body.marksObtained || !req.body.totalMarks) {
+    return res.status(400).json({ message: 'Required fields missing' });
+  }
+
+  const totalMarks = Number(req.body.totalMarks);
+  const marksObtained = Number(req.body.marksObtained);
+  const entry = {
+    id: `r${Date.now()}`,
+    examType: 'midterm',
+    grade: calculateGrade((marksObtained / totalMarks) * 100),
+    ...req.body,
+    marksObtained,
+    totalMarks
+  };
+
+  examResultStore.push(entry);
+  res.status(201).json(entry);
 };
 
 const getCourses = (req, res) => {
-  res.json(courses);
+  res.json(courseStore);
+};
+
+const getCourseById = (req, res) => {
+  const course = courseStore.find((entry) => entry.id === req.params.id);
+  if (!course) return res.status(404).json({ message: 'Course not found' });
+  res.json(course);
+};
+
+const createCourse = (req, res) => {
+  if (!req.body.name || !req.body.code || !req.body.department) {
+    return res.status(400).json({ message: 'Required fields missing' });
+  }
+
+  const course = {
+    id: `c${Date.now()}`,
+    credits: 3,
+    semester: 1,
+    description: '',
+    ...req.body
+  };
+
+  courseStore.push(course);
+  res.status(201).json(course);
+};
+
+const updateCourse = (req, res) => {
+  const index = courseStore.findIndex((entry) => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Course not found' });
+
+  courseStore[index] = { ...courseStore[index], ...req.body };
+  res.json(courseStore[index]);
+};
+
+const deleteCourse = (req, res) => {
+  const index = courseStore.findIndex((entry) => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Course not found' });
+
+  courseStore.splice(index, 1);
+  res.json({ message: 'Course deleted successfully' });
 };
 
 module.exports = {
   getStudents,
   getStudentById,
+  createStudent,
+  updateStudent,
+  deleteStudent,
   getFaculty,
+  getFacultyById,
+  createFaculty,
+  updateFaculty,
+  deleteFaculty,
   getTimetable,
+  createTimetableEntry,
+  deleteTimetableEntry,
   getAttendance,
+  saveAttendance,
   getFees,
+  createFee,
+  updateFee,
   getExamSchedules,
+  createExamSchedule,
   getExamResults,
-  getCourses
+  createExamResult,
+  getCourses,
+  getCourseById,
+  createCourse,
+  updateCourse,
+  deleteCourse
 };

@@ -11,11 +11,15 @@ app.get('/', (req, res) => {
   res.json({ message: 'Backend is running successfully!' });
 });
 
-app.use('/api/health', require('./routes/exampleRoutes'));
+app.use('/api', require('./routes/exampleRoutes'));
 app.use('/api', require('./routes/collegeRoutes'));
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = { app };
