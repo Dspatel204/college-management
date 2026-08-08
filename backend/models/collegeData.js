@@ -115,6 +115,9 @@ const courses = [
   { id: 'c3', name: 'Database Management Systems', code: 'CS303', department: 'Computer Science', credits: 3, semester: 4, teacher: 'Prof. Mishra', description: 'Relational databases, SQL, normalization' }
 ];
 
+const SUBJECTS = ['Data Structures', 'Operating Systems', 'DBMS'];
+const DEPARTMENTS = ['Computer Science'];
+
 module.exports = {
   students,
   faculty,

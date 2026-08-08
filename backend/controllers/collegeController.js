@@ -267,6 +267,53 @@ const deleteExamResult = (req, res) => {
   res.json({ message: 'Result deleted successfully' });
 };
 
+const getCourses = (req, res) => {
+  res.json(courseStore);
+};
+
+const getCourseById = (req, res) => {
+  const course = courseStore.find((entry) => entry.id === req.params.id);
+  if (!course) return res.status(404).json({ message: 'Course not found' });
+  res.json(course);
+};
+
+const createCourse = (req, res) => {
+  const { name, code, department, credits, semester, teacher, description } = req.body;
+  if (!name || !code || !department || !credits || !semester || !teacher || !description) {
+    return res.status(400).json({ message: 'Required fields missing' });
+  }
+
+  const course = {
+    id: `c${Date.now()}`,
+    name,
+    code,
+    department,
+    credits: Number(credits),
+    semester: Number(semester),
+    teacher,
+    description,
+  };
+
+  courseStore.push(course);
+  res.status(201).json(course);
+};
+
+const updateCourse = (req, res) => {
+  const index = courseStore.findIndex((entry) => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Course not found' });
+
+  courseStore[index] = { ...courseStore[index], ...req.body };
+  res.json(courseStore[index]);
+};
+
+const deleteCourse = (req, res) => {
+  const index = courseStore.findIndex((entry) => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Course not found' });
+
+  courseStore.splice(index, 1);
+  res.json({ message: 'Course deleted successfully' });
+};
+
 const getReports = (req, res) => {
   const { department } = req.query;
   const students = department ? studentStore.filter((s) => s.department === department) : [...studentStore];
