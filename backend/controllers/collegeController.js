@@ -218,6 +218,28 @@ const createExamSchedule = (req, res) => {
   res.status(201).json(entry);
 };
 
+const createExamResult = (req, res) => {
+  const { studentId, subject, examType, marksObtained, totalMarks } = req.body;
+  if (!studentId || !subject || !examType || marksObtained === undefined || totalMarks === undefined) {
+    return res.status(400).json({ message: 'Required fields missing' });
+  }
+
+  const obtained = Number(marksObtained);
+  const total = Number(totalMarks);
+  const result = {
+    id: `r${Date.now()}`,
+    studentId,
+    subject,
+    examType,
+    marksObtained: obtained,
+    totalMarks: total,
+    grade: calculateGrade((obtained / total) * 100),
+  };
+
+  examResultStore.push(result);
+  res.status(201).json(result);
+};
+
 const getExamResults = (req, res) => {
   const { studentId, subject, examType, department, semester } = req.query;
   let result = [...examResultStore];
