@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { STUDENTS, SUBJECTS, INITIAL_ATTENDANCE, type AttendanceRecord } from "@/lib/college-data";
-import { Check, X, Clock, Save } from "lucide-react";
+import { STUDENTS, SUBJECTS, type AttendanceRecord } from "@/lib/college-data";
+import { getStudents as fetchStudents, getAttendance, saveAttendance as apiSaveAttendance, type Student } from "@/lib/api";
+import { Check, X, Clock, Save, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/attendance")({
   component: AttendancePage,
@@ -14,19 +15,47 @@ export const Route = createFileRoute("/attendance")({
 function AttendancePage() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [records, setRecords] = useState<AttendanceRecord[]>(INITIAL_ATTENDANCE);
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [marking, setMarking] = useState<Record<string, "present" | "absent" | "late">>({});
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // Initialize marking from existing records
   useEffect(() => {
     if (!isAuthenticated) {
       navigate({ to: "/login" });
       return;
     }
   }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    loadStudents();
+    loadAttendance();
+  }, [selectedDate, selectedSubject]);
+
+  const loadStudents = async () => {
+    try {
+      const data = await fetchStudents();
+      setStudents(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to load students:", e);
+    }
+  };
+
+  const loadAttendance = async () => {
+    setLoading(true);
+    try {
+      const data = await getAttendance({ date: selectedDate, subject: selectedSubject });
+      setRecords(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to load attendance:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const existing: Record<string, "present" | "absent" | "late"> = {};
@@ -50,20 +79,26 @@ function AttendancePage() {
     setSaved(false);
   };
 
-  const saveAttendance = () => {
-    const newRecords = records.filter(
-      (r) => !(r.date === selectedDate && r.subject === selectedSubject)
-    );
-    Object.entries(marking).forEach(([studentId, status]) => {
-      newRecords.push({ studentId, date: selectedDate, status, subject: selectedSubject });
-    });
-    setRecords(newRecords);
-    setSaved(true);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await apiSaveAttendance({
+        date: selectedDate,
+        subject: selectedSubject,
+        records: Object.entries(marking).map(([studentId, status]) => ({ studentId, status })),
+      });
+      await loadAttendance();
+      setSaved(true);
+    } catch (e) {
+      console.error("Save failed:", e);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const markAll = (status: "present" | "absent") => {
     const all: Record<string, "present" | "absent" | "late"> = {};
-    STUDENTS.forEach((s) => { all[s.id] = status; });
+    students.forEach((s) => { all[s.id] = status; });
     setMarking(all);
     setSaved(false);
   };
@@ -140,42 +175,48 @@ function AttendancePage() {
       <Card className="border-0 shadow-md">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Students</CardTitle>
-          <Button onClick={saveAttendance} size="sm" disabled={saved}>
+          <Button onClick={handleSave} size="sm" disabled={saved || saving}>
             <Save className="mr-2 h-4 w-4" />
-            {saved ? "Saved ✓" : "Save Attendance"}
+            {saving ? "Saving..." : saved ? "Saved ✓" : "Save Attendance"}
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {STUDENTS.map((student) => {
-              const status = marking[student.id] || "present";
-              const config = statusConfig[status];
-              const StatusIcon = config.icon;
-              return (
-                <div
-                  key={student.id}
-                  className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-secondary/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                      {student.avatar}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{student.name}</p>
-                      <p className="text-xs text-muted-foreground">{student.rollNo} • {student.department}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => toggleStatus(student.id)}
-                    className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-colors ${config.bg} ${config.text}`}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {students.map((student) => {
+                const status = marking[student.id] || "present";
+                const config = statusConfig[status];
+                const StatusIcon = config.icon;
+                return (
+                  <div
+                    key={student.id}
+                    className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-secondary/50 transition-colors"
                   >
-                    <StatusIcon className="h-4 w-4" />
-                    {config.label}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                        {student.avatar}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{student.name}</p>
+                        <p className="text-xs text-muted-foreground">{student.rollNo} • {student.department}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => toggleStatus(student.id)}
+                      className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-colors ${config.bg} ${config.text}`}
+                    >
+                      <StatusIcon className="h-4 w-4" />
+                      {config.label}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </DashboardLayout>

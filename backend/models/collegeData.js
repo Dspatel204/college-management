@@ -123,5 +123,7 @@ module.exports = {
   fees,
   examSchedules,
   examResults,
-  courses
+  courses,
+  SUBJECTS,
+  DEPARTMENTS
 };

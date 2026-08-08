@@ -10,8 +10,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { EXAM_SCHEDULES, EXAM_RESULTS, STUDENTS, SUBJECTS, getStudentName, getStudentById, calculateGrade, type ExamResult, type ExamSchedule } from "@/lib/college-data";
-import { FileText, Calendar, Award, Plus, GraduationCap } from "lucide-react";
+import {
+  getExamSchedules as fetchExamSchedules,
+  createExamSchedule as apiCreateExamSchedule,
+  getExamResults as fetchExamResults,
+  createExamResult as apiCreateExamResult,
+  updateExamResult as apiUpdateExamResult,
+  deleteExamResult as apiDeleteExamResult,
+  getStudents,
+  type ExamSchedule,
+  type ExamResult,
+  type Student,
+} from "@/lib/api";
+import { DEPARTMENTS, SUBJECTS, getStudentName, getStudentById, calculateGrade } from "@/lib/college-data";
+import { FileText, Calendar, Award, Plus, GraduationCap, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/exams")({
   component: ExamsPage,
@@ -20,20 +32,21 @@ export const Route = createFileRoute("/exams")({
 function ExamsPage() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [schedules, setSchedules] = useState<ExamSchedule[]>(EXAM_SCHEDULES);
-  const [results, setResults] = useState<ExamResult[]>(EXAM_RESULTS);
+  const [schedules, setSchedules] = useState<ExamSchedule[]>([]);
+  const [results, setResults] = useState<ExamResult[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [addScheduleDialog, setAddScheduleDialog] = useState(false);
   const [marksDialog, setMarksDialog] = useState(false);
   const [reportCardStudent, setReportCardStudent] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // Schedule form
   const [newSubject, setNewSubject] = useState("");
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [newRoom, setNewRoom] = useState("");
   const [newType, setNewType] = useState<ExamSchedule["type"]>("midterm");
 
-  // Marks form
   const [marksStudentId, setMarksStudentId] = useState("");
   const [marksSubject, setMarksSubject] = useState("");
   const [marksObtained, setMarksObtained] = useState("");
@@ -44,41 +57,88 @@ function ExamsPage() {
     if (!isAuthenticated) navigate({ to: "/login" });
   }, [isAuthenticated, navigate]);
 
-  if (!isAuthenticated) return null;
+  useEffect(() => {
+    loadSchedules();
+    loadResults();
+    loadStudents();
+  }, []);
 
-  const handleAddSchedule = () => {
-    if (!newSubject || !newDate || !newTime || !newRoom) return;
-    const schedule: ExamSchedule = {
-      id: `e${Date.now()}`,
-      subject: newSubject,
-      date: newDate,
-      time: newTime,
-      room: newRoom,
-      department: "Computer Science",
-      semester: 4,
-      type: newType,
-    };
-    setSchedules([...schedules, schedule]);
-    setAddScheduleDialog(false);
-    setNewSubject(""); setNewDate(""); setNewTime(""); setNewRoom("");
+  const loadSchedules = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchExamSchedules();
+      setSchedules(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to load schedules:", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddMarks = () => {
+  const loadResults = async () => {
+    try {
+      const data = await fetchExamResults();
+      setResults(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to load results:", e);
+    }
+  };
+
+  const loadStudents = async () => {
+    try {
+      const data = await getStudents();
+      setStudents(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to load students:", e);
+    }
+  };
+
+  if (!isAuthenticated) return null;
+
+  const handleAddSchedule = async () => {
+    if (!newSubject || !newDate || !newTime || !newRoom) return;
+    setSaving(true);
+    try {
+      const schedule = await apiCreateExamSchedule({
+        subject: newSubject,
+        date: newDate,
+        time: newTime,
+        room: newRoom,
+        department: "Computer Science",
+        semester: 4,
+        type: newType,
+      });
+      setSchedules([...schedules, schedule as ExamSchedule]);
+      setAddScheduleDialog(false);
+      setNewSubject(""); setNewDate(""); setNewTime(""); setNewRoom("");
+    } catch (e) {
+      console.error("Add schedule failed:", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddMarks = async () => {
     if (!marksStudentId || !marksSubject || !marksObtained) return;
     const obtained = Number(marksObtained);
     const total = Number(marksTotalMarks);
-    const result: ExamResult = {
-      id: `r${Date.now()}`,
-      studentId: marksStudentId,
-      subject: marksSubject,
-      examType: marksExamType,
-      marksObtained: obtained,
-      totalMarks: total,
-      grade: calculateGrade((obtained / total) * 100),
-    };
-    setResults([...results, result]);
-    setMarksDialog(false);
-    setMarksObtained(""); setMarksStudentId(""); setMarksSubject("");
+    setSaving(true);
+    try {
+      const result = await apiCreateExamResult({
+        studentId: marksStudentId,
+        subject: marksSubject,
+        examType: marksExamType,
+        marksObtained: obtained,
+        totalMarks: total,
+      });
+      setResults([...results, result as ExamResult]);
+      setMarksDialog(false);
+      setMarksObtained(""); setMarksStudentId(""); setMarksSubject("");
+    } catch (e) {
+      console.error("Add marks failed:", e);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const studentResults = reportCardStudent ? results.filter((r) => r.studentId === reportCardStudent) : [];
@@ -112,34 +172,40 @@ function ExamsPage() {
           <div className="mb-4 flex justify-end">
             <Button onClick={() => setAddScheduleDialog(true)} className="gap-2"><Plus className="h-4 w-4" /> Add Exam</Button>
           </div>
-          <Card className="border-0 shadow-md">
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Room</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Department</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {schedules.map((exam) => (
-                    <TableRow key={exam.id}>
-                      <TableCell className="font-medium text-foreground">{exam.subject}</TableCell>
-                      <TableCell>{exam.date}</TableCell>
-                      <TableCell>{exam.time}</TableCell>
-                      <TableCell>{exam.room}</TableCell>
-                      <TableCell>{typeBadge(exam.type)}</TableCell>
-                      <TableCell>{exam.department} — Sem {exam.semester}</TableCell>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <Card className="border-0 shadow-md">
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Room</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Department</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {schedules.map((exam) => (
+                      <TableRow key={exam.id}>
+                        <TableCell className="font-medium text-foreground">{exam.subject}</TableCell>
+                        <TableCell>{exam.date}</TableCell>
+                        <TableCell>{exam.time}</TableCell>
+                        <TableCell>{exam.room}</TableCell>
+                        <TableCell>{typeBadge(exam.type)}</TableCell>
+                        <TableCell>{exam.department} — Sem {exam.semester}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* MARKS TAB */}
@@ -190,9 +256,7 @@ function ExamsPage() {
             <Select value={reportCardStudent ?? ""} onValueChange={setReportCardStudent}>
               <SelectTrigger className="w-72"><SelectValue placeholder="Select a student to view report card" /></SelectTrigger>
               <SelectContent>
-                {STUDENTS.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>{s.name} ({s.rollNo})</SelectItem>
-                ))}
+                {students.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} ({s.rollNo})</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -298,7 +362,9 @@ function ExamsPage() {
                 </Select>
               </div>
             </div>
-            <Button onClick={handleAddSchedule} className="w-full">Add Schedule</Button>
+            <Button onClick={handleAddSchedule} className="w-full" disabled={saving}>
+              {saving ? "Adding..." : "Add Schedule"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -312,7 +378,7 @@ function ExamsPage() {
               <label className="text-sm font-medium text-foreground">Student</label>
               <Select value={marksStudentId} onValueChange={setMarksStudentId}>
                 <SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger>
-                <SelectContent>{STUDENTS.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} ({s.rollNo})</SelectItem>)}</SelectContent>
+                <SelectContent>{students.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} ({s.rollNo})</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
@@ -343,7 +409,9 @@ function ExamsPage() {
                 </Select>
               </div>
             </div>
-            <Button onClick={handleAddMarks} className="w-full">Save Marks</Button>
+            <Button onClick={handleAddMarks} className="w-full" disabled={saving}>
+              {saving ? "Saving..." : "Save Marks"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

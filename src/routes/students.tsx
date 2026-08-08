@@ -8,9 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { STUDENTS as INITIAL_STUDENTS, DEPARTMENTS, COURSES, type Student } from "@/lib/college-data";
-import { Search, Mail, Phone, Plus, Pencil, Trash2, Eye, UserPlus, BookOpen, MapPin, Shield } from "lucide-react";
+import {
+  getStudents as fetchStudents,
+  createStudent as apiCreateStudent,
+  updateStudent as apiUpdateStudent,
+  deleteStudent as apiDeleteStudent,
+  getStudentById as fetchStudentById,
+  getCourses,
+  type Student,
+  type Course,
+} from "@/lib/api";
+import { DEPARTMENTS, SUBJECTS } from "@/lib/college-data";
+import { Search, Mail, Phone, Plus, Pencil, Trash2, Eye, UserPlus, BookOpen, MapPin, Shield, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/students")({
   component: StudentsPage,
@@ -19,19 +28,47 @@ export const Route = createFileRoute("/students")({
 function StudentsPage() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [students, setStudents] = useState<Student[]>(INITIAL_STUDENTS);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("All");
   const [dialogMode, setDialogMode] = useState<"add" | "edit" | "view" | "enroll" | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // Form state
   const [form, setForm] = useState<Partial<Student>>({});
 
   useEffect(() => {
     if (!isAuthenticated) navigate({ to: "/login" });
   }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    loadStudents();
+    loadCourses();
+  }, []);
+
+  const loadStudents = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchStudents();
+      setStudents(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to load students:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCourses = async () => {
+    try {
+      const data = await getCourses();
+      setCourses(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to load courses:", e);
+    }
+  };
 
   if (!isAuthenticated) return null;
 
@@ -53,7 +90,7 @@ function StudentsPage() {
     setDialogMode("edit");
   };
 
-  const openView = (s: Student) => {
+  const openView = async (s: Student) => {
     setSelectedStudent(s);
     setDialogMode("view");
   };
@@ -64,54 +101,73 @@ function StudentsPage() {
     setDialogMode("enroll");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name || !form.rollNo || !form.email || !form.phone) return;
-    if (dialogMode === "add") {
-      const newStudent: Student = {
-        id: `s${Date.now()}`,
-        name: form.name,
-        rollNo: form.rollNo,
-        department: form.department || DEPARTMENTS[0],
-        semester: form.semester || 1,
-        email: form.email,
-        phone: form.phone,
-        avatar: form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(),
-        admissionDate: new Date().toISOString().split("T")[0],
-        address: form.address || "",
-        guardianName: form.guardianName || "",
-        guardianPhone: form.guardianPhone || "",
-        status: "active",
-        enrolledCourses: [],
-      };
-      setStudents([newStudent, ...students]);
-    } else if (dialogMode === "edit" && selectedStudent) {
-      setStudents(students.map(s => s.id === selectedStudent.id ? {
-        ...s,
-        name: form.name!,
-        rollNo: form.rollNo!,
-        department: form.department || s.department,
-        semester: form.semester || s.semester,
-        email: form.email!,
-        phone: form.phone!,
-        avatar: form.name!.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(),
-        address: form.address,
-        guardianName: form.guardianName,
-        guardianPhone: form.guardianPhone,
-        status: form.status || s.status,
-      } : s));
+    setSaving(true);
+    try {
+      if (dialogMode === "add") {
+        const newStudent = await apiCreateStudent({
+          name: form.name,
+          rollNo: form.rollNo,
+          department: form.department || DEPARTMENTS[0],
+          semester: form.semester || 1,
+          email: form.email,
+          phone: form.phone,
+          address: form.address || "",
+          guardianName: form.guardianName || "",
+          guardianPhone: form.guardianPhone || "",
+          status: form.status || "active",
+          enrolledCourses: form.enrolledCourses || [],
+        });
+        setStudents([newStudent as Student, ...students]);
+      } else if (dialogMode === "edit" && selectedStudent) {
+        const updated = await apiUpdateStudent(selectedStudent.id, {
+          name: form.name!,
+          rollNo: form.rollNo!,
+          department: form.department || selectedStudent.department,
+          semester: form.semester || selectedStudent.semester,
+          email: form.email!,
+          phone: form.phone!,
+          address: form.address,
+          guardianName: form.guardianName,
+          guardianPhone: form.guardianPhone,
+          status: form.status || selectedStudent.status,
+          enrolledCourses: form.enrolledCourses || selectedStudent.enrolledCourses,
+        });
+        setStudents(students.map(s => s.id === selectedStudent.id ? (updated as Student) : s));
+      }
+      setDialogMode(null);
+      setForm({});
+    } catch (e) {
+      console.error("Save failed:", e);
+    } finally {
+      setSaving(false);
     }
-    setDialogMode(null);
-    setForm({});
   };
 
-  const handleEnrollSave = () => {
+  const handleEnrollSave = async () => {
     if (!selectedStudent) return;
-    setStudents(students.map(s => s.id === selectedStudent.id ? { ...s, enrolledCourses: form.enrolledCourses } : s));
-    setDialogMode(null);
+    setSaving(true);
+    try {
+      const updated = await apiUpdateStudent(selectedStudent.id, {
+        enrolledCourses: form.enrolledCourses || [],
+      });
+      setStudents(students.map(s => s.id === selectedStudent.id ? (updated as Student) : s));
+      setDialogMode(null);
+    } catch (e) {
+      console.error("Enroll failed:", e);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setStudents(students.filter(s => s.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await apiDeleteStudent(id);
+      setStudents(students.filter(s => s.id !== id));
+    } catch (e) {
+      console.error("Delete failed:", e);
+    }
     setDeleteConfirm(null);
   };
 
@@ -137,48 +193,54 @@ function StudentsPage() {
           </div>
           <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
             <option value="All">All Departments</option>
-            {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+            {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
           <Button onClick={openAdd} className="gap-2"><UserPlus className="h-4 w-4" /> Add Student</Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((student) => (
-          <Card key={student.id} className="border-0 shadow-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-5">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                  {student.avatar}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((student) => (
+            <Card key={student.id} className="border-0 shadow-md hover:shadow-lg transition-shadow">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                    {student.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-foreground">{student.name}</h3>
+                      <Badge variant="outline" className={student.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>
+                        {student.status || "active"}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{student.rollNo}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">{student.department}</span>
+                      <span className="inline-flex items-center rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-medium text-accent-foreground">Sem {student.semester}</span>
+                    </div>
+                    <div className="mt-3 space-y-1">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground"><Mail className="h-3 w-3" />{student.email}</div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground"><Phone className="h-3 w-3" />{student.phone}</div>
+                    </div>
+                    <div className="mt-3 flex gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => openView(student)} className="h-8 px-2"><Eye className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(student)} className="h-8 px-2"><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEnroll(student)} className="h-8 px-2"><BookOpen className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(student.id)} className="h-8 px-2 text-destructive hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-foreground">{student.name}</h3>
-                    <Badge variant="outline" className={student.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>
-                      {student.status || "active"}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{student.rollNo}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">{student.department}</span>
-                    <span className="inline-flex items-center rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-medium text-accent-foreground">Sem {student.semester}</span>
-                  </div>
-                  <div className="mt-3 space-y-1">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground"><Mail className="h-3 w-3" />{student.email}</div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground"><Phone className="h-3 w-3" />{student.phone}</div>
-                  </div>
-                  <div className="mt-3 flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => openView(student)} className="h-8 px-2"><View className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(student)} className="h-8 px-2"><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => openEnroll(student)} className="h-8 px-2"><BookOpen className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(student.id)} className="h-8 px-2 text-destructive hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* View Profile Dialog */}
       <Dialog open={dialogMode === "view"} onOpenChange={() => setDialogMode(null)}>
@@ -208,7 +270,7 @@ function StudentsPage() {
                 <h4 className="text-sm font-medium text-foreground mb-2">Enrolled Courses</h4>
                 <div className="flex flex-wrap gap-2">
                   {(selectedStudent.enrolledCourses || []).map(cId => {
-                    const course = COURSES.find(c => c.id === cId);
+                    const course = courses.find(c => c.id === cId);
                     return course ? <Badge key={cId} variant="secondary">{course.code} - {course.name}</Badge> : null;
                   })}
                   {(!selectedStudent.enrolledCourses || selectedStudent.enrolledCourses.length === 0) && (
@@ -282,7 +344,9 @@ function StudentsPage() {
               </div>
             )}
           </div>
-          <Button onClick={handleSave} className="w-full mt-2">{dialogMode === "add" ? "Register Student" : "Save Changes"}</Button>
+          <Button onClick={handleSave} className="w-full mt-2" disabled={saving}>
+            {saving ? "Saving..." : dialogMode === "add" ? "Register Student" : "Save Changes"}
+          </Button>
         </DialogContent>
       </Dialog>
 
@@ -291,7 +355,7 @@ function StudentsPage() {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Course Enrollment — {selectedStudent?.name}</DialogTitle></DialogHeader>
           <div className="space-y-2 max-h-80 overflow-y-auto">
-            {COURSES.filter(c => !selectedStudent || c.department === selectedStudent.department || c.department === "Computer Science").map(course => {
+            {courses.filter(c => !selectedStudent || c.department === selectedStudent.department || c.department === "Computer Science").map(course => {
               const enrolled = (form.enrolledCourses || []).includes(course.id);
               return (
                 <button key={course.id} onClick={() => toggleCourse(course.id)}
@@ -305,7 +369,9 @@ function StudentsPage() {
               );
             })}
           </div>
-          <Button onClick={handleEnrollSave} className="w-full">Save Enrollment</Button>
+          <Button onClick={handleEnrollSave} className="w-full" disabled={saving}>
+            {saving ? "Saving..." : "Save Enrollment"}
+          </Button>
         </DialogContent>
       </Dialog>
 
@@ -322,8 +388,4 @@ function StudentsPage() {
       </Dialog>
     </DashboardLayout>
   );
-}
-
-function View(props: { className?: string }) {
-  return <Eye {...props} />;
 }

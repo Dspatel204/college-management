@@ -6,7 +6,9 @@ const {
   fees,
   examSchedules,
   examResults,
-  courses
+  courses,
+  SUBJECTS,
+  DEPARTMENTS
 } = require('../models/collegeData');
 
 let studentStore = [...students];
@@ -217,70 +219,114 @@ const createExamSchedule = (req, res) => {
 };
 
 const getExamResults = (req, res) => {
-  res.json(examResultStore);
-};
+  const { studentId, subject, examType, department, semester } = req.query;
+  let result = [...examResultStore];
 
-const createExamResult = (req, res) => {
-  if (!req.body.studentId || !req.body.subject || !req.body.marksObtained || !req.body.totalMarks) {
-    return res.status(400).json({ message: 'Required fields missing' });
+  if (studentId) result = result.filter((entry) => entry.studentId === studentId);
+  if (subject) result = result.filter((entry) => entry.subject === subject);
+  if (examType) result = result.filter((entry) => entry.examType === examType);
+
+  if (department || semester) {
+    const studentIds = (department || semester)
+      ? studentStore
+          .filter((s) => {
+            const matchDept = !department || s.department === department;
+            const matchSem = !semester || s.semester === Number(semester);
+            return matchDept && matchSem;
+          })
+          .map((s) => s.id)
+      : studentStore.map((s) => s.id);
+    result = result.filter((entry) => studentIds.includes(entry.studentId));
   }
 
-  const totalMarks = Number(req.body.totalMarks);
-  const marksObtained = Number(req.body.marksObtained);
-  const entry = {
-    id: `r${Date.now()}`,
-    examType: 'midterm',
-    grade: calculateGrade((marksObtained / totalMarks) * 100),
-    ...req.body,
-    marksObtained,
-    totalMarks
-  };
-
-  examResultStore.push(entry);
-  res.status(201).json(entry);
+  res.json(result);
 };
 
-const getCourses = (req, res) => {
-  res.json(courseStore);
-};
+const updateExamResult = (req, res) => {
+  const index = examResultStore.findIndex((entry) => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Result not found' });
 
-const getCourseById = (req, res) => {
-  const course = courseStore.find((entry) => entry.id === req.params.id);
-  if (!course) return res.status(404).json({ message: 'Course not found' });
-  res.json(course);
-};
-
-const createCourse = (req, res) => {
-  if (!req.body.name || !req.body.code || !req.body.department) {
-    return res.status(400).json({ message: 'Required fields missing' });
+  const existing = examResultStore[index];
+  const merged = { ...existing, ...req.body };
+  if (req.body.marksObtained !== undefined || req.body.totalMarks !== undefined) {
+    const obtained = Number(merged.marksObtained ?? existing.marksObtained);
+    const total = Number(merged.totalMarks ?? existing.totalMarks);
+    merged.marksObtained = obtained;
+    merged.totalMarks = total;
+    merged.grade = calculateGrade((obtained / total) * 100);
   }
-
-  const course = {
-    id: `c${Date.now()}`,
-    credits: 3,
-    semester: 1,
-    description: '',
-    ...req.body
-  };
-
-  courseStore.push(course);
-  res.status(201).json(course);
+  examResultStore[index] = merged;
+  res.json(examResultStore[index]);
 };
 
-const updateCourse = (req, res) => {
-  const index = courseStore.findIndex((entry) => entry.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Course not found' });
+const deleteExamResult = (req, res) => {
+  const index = examResultStore.findIndex((entry) => entry.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: 'Result not found' });
 
-  courseStore[index] = { ...courseStore[index], ...req.body };
-  res.json(courseStore[index]);
+  examResultStore.splice(index, 1);
+  res.json({ message: 'Result deleted successfully' });
 };
 
-const deleteCourse = (req, res) => {
-  const index = courseStore.findIndex((entry) => entry.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Course not found' });
+const getReports = (req, res) => {
+  const { department } = req.query;
+  const students = department ? studentStore.filter((s) => s.department === department) : [...studentStore];
 
-  courseStore.splice(index, 1);
-  res.json({ message: 'Course deleted successfully' });
+  const studentReport = students.map((student) => {
+    const attendance = attendanceStore.filter((a) => a.studentId === student.id);
+    const present = attendance.filter((a) => a.status === 'present').length;
+    const total = attendance.length;
+    const fees = feeStore.filter((f) => f.studentId === student.id);
+    const totalFee = fees.reduce((s, f) => s + Number(f.amount), 0);
+    const paidFee = fees.reduce((s, f) => s + Number(f.paid), 0);
+    return {
+      ...student,
+      attendanceRate: total > 0 ? Math.round((present / total) * 100) : 0,
+      totalClasses: total,
+      presentClasses: present,
+      totalFee,
+      paidFee,
+      feeStatus: paidFee >= totalFee ? 'paid' : paidFee > 0 ? 'partial' : 'pending',
+    };
+  });
+
+  const attendanceBySubject = SUBJECTS.map((subject) => {
+    const records = attendanceStore.filter((a) => a.subject === subject);
+    const present = records.filter((a) => a.status === 'present').length;
+    const absent = records.filter((a) => a.status === 'absent').length;
+    const late = records.filter((a) => a.status === 'late').length;
+    return {
+      subject,
+      total: records.length,
+      present,
+      absent,
+      late,
+      rate: records.length > 0 ? Math.round((present / records.length) * 100) : 0,
+    };
+  });
+
+  const feeByDept = DEPARTMENTS.map((dept) => {
+    const deptStudents = studentStore.filter((s) => s.department === dept).map((s) => s.id);
+    const fees = feeStore.filter((f) => deptStudents.includes(f.studentId));
+    const total = fees.reduce((s, f) => s + Number(f.amount), 0);
+    const collected = fees.reduce((s, f) => s + Number(f.paid), 0);
+    return {
+      department: dept,
+      total,
+      collected,
+      pending: total - collected,
+      rate: total > 0 ? Math.round((collected / total) * 100) : 0,
+    };
+  });
+
+  const totalFees = feeStore.reduce((s, f) => s + Number(f.amount), 0);
+  const totalCollected = feeStore.reduce((s, f) => s + Number(f.paid), 0);
+
+  res.json({
+    studentReport,
+    attendanceBySubject,
+    feeByDept,
+    totals: { totalFees, totalCollected },
+  });
 };
 
 module.exports = {
@@ -306,9 +352,12 @@ module.exports = {
   createExamSchedule,
   getExamResults,
   createExamResult,
+  updateExamResult,
+  deleteExamResult,
   getCourses,
   getCourseById,
   createCourse,
   updateCourse,
-  deleteCourse
+  deleteCourse,
+  getReports
 };

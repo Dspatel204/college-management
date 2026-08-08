@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { INITIAL_FEES, STUDENTS, getStudentName, getStudentById, type FeeRecord } from "@/lib/college-data";
+import {
+  getFees as fetchFees,
+  createFee as apiCreateFee,
+  updateFee as apiUpdateFee,
+  getStudents as fetchStudents,
+  type FeeRecord,
+  type Student,
+} from "@/lib/api";
+import { getStudentName, getStudentById } from "@/lib/college-data";
 import { StatsCard } from "@/components/StatsCard";
-import { IndianRupee, Receipt, AlertTriangle, CheckCircle, Printer, Plus } from "lucide-react";
+import { IndianRupee, Receipt, AlertTriangle, CheckCircle, Printer, Plus, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/fees")({
   component: FeesPage,
@@ -20,17 +28,46 @@ export const Route = createFileRoute("/fees")({
 function FeesPage() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [fees, setFees] = useState<FeeRecord[]>(INITIAL_FEES);
+  const [fees, setFees] = useState<FeeRecord[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [receiptFee, setReceiptFee] = useState<FeeRecord | null>(null);
   const [collectDialog, setCollectDialog] = useState(false);
   const [collectStudentId, setCollectStudentId] = useState("");
   const [collectType, setCollectType] = useState<FeeRecord["type"]>("tuition");
   const [collectAmount, setCollectAmount] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) navigate({ to: "/login" });
   }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    loadFees();
+    loadStudents();
+  }, []);
+
+  const loadFees = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchFees();
+      setFees(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to load fees:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadStudents = async () => {
+    try {
+      const data = await fetchStudents();
+      setStudents(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to load students:", e);
+    }
+  };
 
   if (!isAuthenticated) return null;
 
@@ -51,23 +88,29 @@ function FeesPage() {
     return <Badge variant="outline" className={variants[status]}>{status}</Badge>;
   };
 
-  const handleCollect = () => {
+  const handleCollect = async () => {
     if (!collectStudentId || !collectAmount) return;
-    const newFee: FeeRecord = {
-      id: `f${Date.now()}`,
-      studentId: collectStudentId,
-      type: collectType,
-      amount: Number(collectAmount),
-      paid: Number(collectAmount),
-      dueDate: new Date().toISOString().split("T")[0],
-      paidDate: new Date().toISOString().split("T")[0],
-      status: "paid",
-      receiptNo: `REC-${Date.now().toString().slice(-6)}`,
-    };
-    setFees([newFee, ...fees]);
-    setCollectDialog(false);
-    setCollectAmount("");
-    setCollectStudentId("");
+    setSaving(true);
+    try {
+      const newFee = await apiCreateFee({
+        studentId: collectStudentId,
+        type: collectType,
+        amount: Number(collectAmount),
+        paid: Number(collectAmount),
+        dueDate: new Date().toISOString().split("T")[0],
+        paidDate: new Date().toISOString().split("T")[0],
+        status: "paid",
+        receiptNo: `REC-${Date.now().toString().slice(-6)}`,
+      });
+      setFees([newFee as FeeRecord, ...fees]);
+      setCollectDialog(false);
+      setCollectAmount("");
+      setCollectStudentId("");
+    } catch (e) {
+      console.error("Collect fee failed:", e);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -109,43 +152,49 @@ function FeesPage() {
       {/* Table */}
       <Card className="border-0 shadow-md">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Paid</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((fee) => (
-                <TableRow key={fee.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium text-foreground">{getStudentName(fee.studentId)}</p>
-                      <p className="text-xs text-muted-foreground">{getStudentById(fee.studentId)?.rollNo}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="capitalize">{fee.type}</TableCell>
-                  <TableCell>₹{fee.amount.toLocaleString()}</TableCell>
-                  <TableCell>₹{fee.paid.toLocaleString()}</TableCell>
-                  <TableCell>{fee.dueDate}</TableCell>
-                  <TableCell>{statusBadge(fee.status)}</TableCell>
-                  <TableCell>
-                    {fee.receiptNo && (
-                      <Button variant="ghost" size="sm" onClick={() => setReceiptFee(fee)} className="gap-1">
-                        <Printer className="h-3.5 w-3.5" /> Receipt
-                      </Button>
-                    )}
-                  </TableCell>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Student</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Paid</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((fee) => (
+                  <TableRow key={fee.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-foreground">{getStudentName(fee.studentId)}</p>
+                        <p className="text-xs text-muted-foreground">{getStudentById(fee.studentId)?.rollNo}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="capitalize">{fee.type}</TableCell>
+                    <TableCell>₹{fee.amount.toLocaleString()}</TableCell>
+                    <TableCell>₹{fee.paid.toLocaleString()}</TableCell>
+                    <TableCell>{fee.dueDate}</TableCell>
+                    <TableCell>{statusBadge(fee.status)}</TableCell>
+                    <TableCell>
+                      {fee.receiptNo && (
+                        <Button variant="ghost" size="sm" onClick={() => setReceiptFee(fee)} className="gap-1">
+                          <Printer className="h-3.5 w-3.5" /> Receipt
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -189,7 +238,7 @@ function FeesPage() {
               <Select value={collectStudentId} onValueChange={setCollectStudentId}>
                 <SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger>
                 <SelectContent>
-                  {STUDENTS.map((s) => (
+                  {students.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name} ({s.rollNo})</SelectItem>
                   ))}
                 </SelectContent>
@@ -212,7 +261,9 @@ function FeesPage() {
               <label className="text-sm font-medium text-foreground">Amount (₹)</label>
               <Input type="number" value={collectAmount} onChange={(e) => setCollectAmount(e.target.value)} placeholder="Enter amount" />
             </div>
-            <Button onClick={handleCollect} className="w-full">Collect & Generate Receipt</Button>
+            <Button onClick={handleCollect} className="w-full" disabled={saving}>
+              {saving ? "Processing..." : "Collect & Generate Receipt"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

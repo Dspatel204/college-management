@@ -1,67 +1,44 @@
 const express = require('express');
 const router = express.Router();
-const {
-  getStudents,
-  getStudentById,
-  createStudent,
-  updateStudent,
-  deleteStudent,
-  getFaculty,
-  getFacultyById,
-  createFaculty,
-  updateFaculty,
-  deleteFaculty,
-  getTimetable,
-  createTimetableEntry,
-  deleteTimetableEntry,
-  getAttendance,
-  saveAttendance,
-  getFees,
-  createFee,
-  updateFee,
-  getExamSchedules,
-  createExamSchedule,
-  getExamResults,
-  createExamResult,
-  getCourses,
-  getCourseById,
-  createCourse,
-  updateCourse,
-  deleteCourse
-} = require('../controllers/collegeController');
+const collegeController = require('../controllers/collegeController');
 
-router.get('/students', getStudents);
-router.post('/students', createStudent);
-router.get('/students/:id', getStudentById);
-router.put('/students/:id', updateStudent);
-router.delete('/students/:id', deleteStudent);
+router.get('/students', collegeController.getStudents);
+router.post('/students', collegeController.createStudent);
+router.get('/students/:id', collegeController.getStudentById);
+router.put('/students/:id', collegeController.updateStudent);
+router.delete('/students/:id', collegeController.deleteStudent);
 
-router.get('/faculty', getFaculty);
-router.post('/faculty', createFaculty);
-router.get('/faculty/:id', getFacultyById);
-router.put('/faculty/:id', updateFaculty);
-router.delete('/faculty/:id', deleteFaculty);
+router.get('/faculty', collegeController.getFaculty);
+router.post('/faculty', collegeController.createFaculty);
+router.get('/faculty/:id', collegeController.getFacultyById);
+router.put('/faculty/:id', collegeController.updateFaculty);
+router.delete('/faculty/:id', collegeController.deleteFaculty);
 
-router.get('/timetable', getTimetable);
-router.post('/timetable', createTimetableEntry);
-router.delete('/timetable/:id', deleteTimetableEntry);
+router.get('/timetable', collegeController.getTimetable);
+router.post('/timetable', collegeController.createTimetableEntry);
+router.delete('/timetable/:id', collegeController.deleteTimetableEntry);
 
-router.get('/attendance', getAttendance);
-router.post('/attendance', saveAttendance);
+router.get('/attendance', collegeController.getAttendance);
+router.post('/attendance', collegeController.saveAttendance);
 
-router.get('/fees', getFees);
-router.post('/fees', createFee);
-router.put('/fees/:id', updateFee);
+router.get('/fees', collegeController.getFees);
+router.post('/fees', collegeController.createFee);
+router.put('/fees/:id', collegeController.updateFee);
 
-router.get('/exams', getExamSchedules);
-router.post('/exams', createExamSchedule);
-router.get('/results', getExamResults);
-router.post('/results', createExamResult);
+router.get('/exams', collegeController.getExamSchedules);
+router.post('/exams', collegeController.createExamSchedule);
 
-router.get('/courses', getCourses);
-router.post('/courses', createCourse);
-router.get('/courses/:id', getCourseById);
-router.put('/courses/:id', updateCourse);
-router.delete('/courses/:id', deleteCourse);
+router.get('/results', collegeController.getExamResults);
+router.post('/results', collegeController.createExamResult);
+router.put('/results/:id', collegeController.updateExamResult);
+router.delete('/results/:id', collegeController.deleteExamResult);
+
+router.get('/courses', collegeController.getCourses);
+router.post('/courses', collegeController.createCourse);
+router.get('/courses/:id', collegeController.getCourseById);
+router.put('/courses/:id', collegeController.updateCourse);
+router.delete('/courses/:id', collegeController.deleteCourse);
+
+router.get('/reports', collegeController.getReports);
 
 module.exports = router;
