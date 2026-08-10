@@ -96,7 +96,7 @@ function LibraryPage() {
       isbn: bookForm.isbn, category: bookForm.category,
       totalCopies: bookForm.totalCopies, availableCopies: bookForm.totalCopies, shelf: bookForm.shelf,
     };
-    setBooks([...books, newBook]);
+    setBooks([newBook, ...books]);
     setAddBookDialog(false);
     setBookForm({ title: "", author: "", isbn: "", category: "Computer Science", totalCopies: 1, shelf: "" });
   };
@@ -150,18 +150,18 @@ function LibraryPage() {
 
   return (
     <DashboardLayout>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Library Management</h1>
-          <p className="text-sm text-muted-foreground">Books, issues & returns</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Library Management</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Books, issues & returns</p>
         </div>
-        <div className="flex gap-3">
-          <Button onClick={() => setAddBookDialog(true)} variant="outline" className="gap-2"><Plus className="h-4 w-4" /> Add Book</Button>
-          <Button onClick={() => setIssueDialog(true)} className="gap-2"><ArrowRightLeft className="h-4 w-4" /> Issue Book</Button>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <Button onClick={() => setAddBookDialog(true)} variant="outline" className="gap-2 w-full sm:w-auto text-xs sm:text-sm"><Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Add Book</Button>
+          <Button onClick={() => setIssueDialog(true)} className="gap-2 w-full sm:w-auto text-xs sm:text-sm"><ArrowRightLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Issue Book</Button>
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-4 sm:mb-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         <StatsCard title="Total Books" value={totalBooks} icon={BookOpen} subtitle={`${books.length} titles`} />
         <StatsCard title="Issued" value={issuedBooks} icon={BookMarked} colorClass="bg-info" subtitle="Currently out" />
         <StatsCard title="Overdue" value={overdueBooks} icon={AlertTriangle} colorClass="bg-destructive" subtitle="Need attention" />
@@ -169,41 +169,41 @@ function LibraryPage() {
       </div>
 
       <Tabs defaultValue="books">
-        <TabsList className="mb-4">
-          <TabsTrigger value="books">Book Catalog</TabsTrigger>
-          <TabsTrigger value="issues">Issue/Return Log</TabsTrigger>
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="books" className="flex-1 sm:flex-none text-xs sm:text-sm">Book Catalog</TabsTrigger>
+          <TabsTrigger value="issues" className="flex-1 sm:flex-none text-xs sm:text-sm">Issue/Return Log</TabsTrigger>
         </TabsList>
 
         <TabsContent value="books">
           <div className="mb-4">
-            <div className="relative max-w-sm">
+            <div className="relative w-full sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search books..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+              <Input placeholder="Search books..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 w-full" />
             </div>
           </div>
           <Card className="border-0 shadow-md">
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Author</TableHead>
-                    <TableHead>ISBN</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Shelf</TableHead>
-                    <TableHead>Available</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Title</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Author</TableHead>
+                    <TableHead className="text-xs sm:text-sm">ISBN</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Category</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Shelf</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Available</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredBooks.map(book => (
                     <TableRow key={book.id}>
-                      <TableCell className="font-medium text-foreground">{book.title}</TableCell>
-                      <TableCell>{book.author}</TableCell>
+                      <TableCell className="font-medium text-foreground text-xs sm:text-sm">{book.title}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{book.author}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{book.isbn}</TableCell>
-                      <TableCell><Badge variant="secondary">{book.category}</Badge></TableCell>
-                      <TableCell>{book.shelf}</TableCell>
+                      <TableCell><Badge variant="secondary" className="text-[10px] sm:text-xs">{book.category}</Badge></TableCell>
+                      <TableCell className="text-xs sm:text-sm">{book.shelf}</TableCell>
                       <TableCell>
-                        <span className={book.availableCopies > 0 ? "text-success font-medium" : "text-destructive font-medium"}>
+                        <span className={`text-xs sm:text-sm ${book.availableCopies > 0 ? "text-success font-medium" : "text-destructive font-medium"}`}>
                           {book.availableCopies}/{book.totalCopies}
                         </span>
                       </TableCell>
@@ -217,34 +217,34 @@ function LibraryPage() {
 
         <TabsContent value="issues">
           <Card className="border-0 shadow-md">
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Book</TableHead>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Issue Date</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Return Date</TableHead>
-                    <TableHead>Fine</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Book</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Student</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Issue Date</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Due Date</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Return Date</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Fine</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {issues.map(issue => (
                     <TableRow key={issue.id}>
-                      <TableCell className="font-medium text-foreground">{getBookTitle(issue.bookId)}</TableCell>
-                      <TableCell>{getStudentName(issue.studentId)}</TableCell>
-                      <TableCell>{issue.issueDate}</TableCell>
-                      <TableCell>{issue.dueDate}</TableCell>
-                      <TableCell>{issue.returnDate || "—"}</TableCell>
-                      <TableCell className={issue.fine > 0 ? "text-destructive font-medium" : ""}>₹{issue.fine}</TableCell>
+                      <TableCell className="font-medium text-foreground text-xs sm:text-sm">{getBookTitle(issue.bookId)}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{getStudentName(issue.studentId)}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{issue.issueDate}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{issue.dueDate}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{issue.returnDate || "—"}</TableCell>
+                      <TableCell className={`text-xs sm:text-sm ${issue.fine > 0 ? "text-destructive font-medium" : ""}`}>₹{issue.fine}</TableCell>
                       <TableCell>{statusBadge(issue.status)}</TableCell>
                       <TableCell>
                         {issue.status !== "returned" && (
-                          <Button variant="outline" size="sm" onClick={() => handleReturn(issue.id)} className="gap-1">
-                            <Undo2 className="h-3.5 w-3.5" /> Return
+                          <Button variant="outline" size="sm" onClick={() => handleReturn(issue.id)} className="gap-1 text-xs">
+                            <Undo2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Return
                           </Button>
                         )}
                       </TableCell>
@@ -259,16 +259,16 @@ function LibraryPage() {
 
       {/* Add Book Dialog */}
       <Dialog open={addBookDialog} onOpenChange={setAddBookDialog}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Add New Book</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div><label className="text-sm font-medium text-foreground">Title *</label><Input value={bookForm.title} onChange={e => setBookForm({ ...bookForm, title: e.target.value })} /></div>
-            <div><label className="text-sm font-medium text-foreground">Author *</label><Input value={bookForm.author} onChange={e => setBookForm({ ...bookForm, author: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="text-sm font-medium text-foreground">ISBN</label><Input value={bookForm.isbn} onChange={e => setBookForm({ ...bookForm, isbn: e.target.value })} /></div>
-              <div><label className="text-sm font-medium text-foreground">Shelf Location</label><Input value={bookForm.shelf} onChange={e => setBookForm({ ...bookForm, shelf: e.target.value })} /></div>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
+          <DialogHeader><DialogTitle className="text-base sm:text-lg">Add New Book</DialogTitle></DialogHeader>
+          <div className="space-y-3 sm:space-y-4">
+            <div><label className="text-xs sm:text-sm font-medium text-foreground">Title *</label><Input value={bookForm.title} onChange={e => setBookForm({ ...bookForm, title: e.target.value })} /></div>
+            <div><label className="text-xs sm:text-sm font-medium text-foreground">Author *</label><Input value={bookForm.author} onChange={e => setBookForm({ ...bookForm, author: e.target.value })} /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div><label className="text-xs sm:text-sm font-medium text-foreground">ISBN</label><Input value={bookForm.isbn} onChange={e => setBookForm({ ...bookForm, isbn: e.target.value })} /></div>
+              <div><label className="text-xs sm:text-sm font-medium text-foreground">Shelf Location</label><Input value={bookForm.shelf} onChange={e => setBookForm({ ...bookForm, shelf: e.target.value })} /></div>
             </div>
-            <div><label className="text-sm font-medium text-foreground">Copies</label><Input type="number" min={1} value={bookForm.totalCopies} onChange={e => setBookForm({ ...bookForm, totalCopies: Number(e.target.value) })} /></div>
+            <div><label className="text-xs sm:text-sm font-medium text-foreground">Copies</label><Input type="number" min={1} value={bookForm.totalCopies} onChange={e => setBookForm({ ...bookForm, totalCopies: Number(e.target.value) })} /></div>
             <Button onClick={handleAddBook} className="w-full">Add Book</Button>
           </div>
         </DialogContent>
@@ -276,26 +276,26 @@ function LibraryPage() {
 
       {/* Issue Book Dialog */}
       <Dialog open={issueDialog} onOpenChange={setIssueDialog}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Issue Book</DialogTitle></DialogHeader>
-          <div className="space-y-4">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
+          <DialogHeader><DialogTitle className="text-base sm:text-lg">Issue Book</DialogTitle></DialogHeader>
+          <div className="space-y-3 sm:space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground">Book</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">Book</label>
               <select value={issueForm.bookId} onChange={e => setIssueForm({ ...issueForm, bookId: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                className="mt-1 w-full rounded-lg border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
                 <option value="">Select book</option>
                 {books.filter(b => b.availableCopies > 0).map(b => <option key={b.id} value={b.id}>{b.title} ({b.availableCopies} available)</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Student</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">Student</label>
               <select value={issueForm.studentId} onChange={e => setIssueForm({ ...issueForm, studentId: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                className="mt-1 w-full rounded-lg border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
                 <option value="">Select student</option>
                 {STUDENTS.map(s => <option key={s.id} value={s.id}>{s.name} ({s.rollNo})</option>)}
               </select>
             </div>
-            <p className="text-xs text-muted-foreground">Due date: 14 days from issue. Fine: ₹{FINE_PER_DAY}/day after due date.</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Due date: 14 days from issue. Fine: ₹{FINE_PER_DAY}/day after due date.</p>
             <Button onClick={handleIssueBook} className="w-full">Issue Book</Button>
           </div>
         </DialogContent>

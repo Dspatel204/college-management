@@ -183,56 +183,56 @@ function StudentsPage() {
     <DashboardLayout>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Students</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} students found</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Students</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">{filtered.length} students found</p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search students..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-64" />
+            <Input placeholder="Search students..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-full sm:w-64" />
           </div>
-          <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+          <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm w-full sm:w-auto">
             <option value="All">All Departments</option>
             {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
-          <Button onClick={openAdd} className="gap-2"><UserPlus className="h-4 w-4" /> Add Student</Button>
+          <Button onClick={openAdd} className="gap-2 w-full sm:w-auto"><UserPlus className="h-4 w-4" /> Add Student</Button>
         </div>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((student) => (
             <Card key={student.id} className="border-0 shadow-md hover:shadow-lg transition-shadow">
-              <CardContent className="p-5">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-primary text-xs sm:text-sm font-bold text-primary-foreground">
                     {student.avatar}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-foreground">{student.name}</h3>
-                      <Badge variant="outline" className={student.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>
+                      <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">{student.name}</h3>
+                      <Badge variant="outline" className={student.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"} shrink-0>
                         {student.status || "active"}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{student.rollNo}</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">{student.department}</span>
-                      <span className="inline-flex items-center rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-medium text-accent-foreground">Sem {student.semester}</span>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{student.rollNo}</p>
+                    <div className="mt-2 flex flex-wrap gap-1 sm:gap-2">
+                      <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] sm:text-xs font-medium text-secondary-foreground">{student.department}</span>
+                      <span className="inline-flex items-center rounded-full bg-accent/20 px-2 py-0.5 text-[10px] sm:text-xs font-medium text-accent-foreground">Sem {student.semester}</span>
                     </div>
-                    <div className="mt-3 space-y-1">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground"><Mail className="h-3 w-3" />{student.email}</div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground"><Phone className="h-3 w-3" />{student.phone}</div>
+                    <div className="mt-2 sm:mt-3 space-y-1">
+                      <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground"><Mail className="h-3 w-3" />{student.email}</div>
+                      <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground"><Phone className="h-3 w-3" />{student.phone}</div>
                     </div>
-                    <div className="mt-3 flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openView(student)} className="h-8 px-2"><Eye className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(student)} className="h-8 px-2"><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => openEnroll(student)} className="h-8 px-2"><BookOpen className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(student.id)} className="h-8 px-2 text-destructive hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                    <div className="mt-2 sm:mt-3 flex gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => openView(student)} className="h-7 w-7 sm:h-8 sm:w-8 p-0"><Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(student)} className="h-7 w-7 sm:h-8 sm:w-8 p-0"><Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEnroll(student)} className="h-7 w-7 sm:h-8 sm:w-8 p-0"><BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(student.id)} className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive"><Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /></Button>
                     </div>
                   </div>
                 </div>
@@ -285,54 +285,54 @@ function StudentsPage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogMode === "add" || dialogMode === "edit"} onOpenChange={() => setDialogMode(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
           <DialogHeader><DialogTitle>{dialogMode === "add" ? "New Student Admission" : "Edit Student"}</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="text-sm font-medium text-foreground">Full Name *</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="col-span-1 sm:col-span-2">
+              <label className="text-xs sm:text-sm font-medium text-foreground">Full Name *</label>
               <Input value={form.name || ""} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Enter full name" />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Roll No *</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">Roll No *</label>
               <Input value={form.rollNo || ""} onChange={(e) => setForm({ ...form, rollNo: e.target.value })} placeholder="CS2024006" />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Department</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">Department</label>
               <Select value={form.department || DEPARTMENTS[0]} onValueChange={(v) => setForm({ ...form, department: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Semester</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">Semester</label>
               <Select value={String(form.semester || 1)} onValueChange={(v) => setForm({ ...form, semester: Number(v) })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{[1,2,3,4,5,6,7,8].map(n => <SelectItem key={n} value={String(n)}>Semester {n}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Email *</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">Email *</label>
               <Input type="email" value={form.email || ""} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="student@college.com" />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Phone *</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">Phone *</label>
               <Input value={form.phone || ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="9876543210" />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Guardian Name</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">Guardian Name</label>
               <Input value={form.guardianName || ""} onChange={(e) => setForm({ ...form, guardianName: e.target.value })} />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Guardian Phone</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">Guardian Phone</label>
               <Input value={form.guardianPhone || ""} onChange={(e) => setForm({ ...form, guardianPhone: e.target.value })} />
             </div>
-            <div className="col-span-2">
-              <label className="text-sm font-medium text-foreground">Address</label>
+            <div className="col-span-1 sm:col-span-2">
+              <label className="text-xs sm:text-sm font-medium text-foreground">Address</label>
               <Input value={form.address || ""} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Enter address" />
             </div>
             {dialogMode === "edit" && (
               <div>
-                <label className="text-sm font-medium text-foreground">Status</label>
+                <label className="text-xs sm:text-sm font-medium text-foreground">Status</label>
                 <Select value={form.status || "active"} onValueChange={(v) => setForm({ ...form, status: v as Student["status"] })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -344,7 +344,7 @@ function StudentsPage() {
               </div>
             )}
           </div>
-          <Button onClick={handleSave} className="w-full mt-2" disabled={saving}>
+          <Button onClick={handleSave} className="w-full mt-3 sm:mt-4" disabled={saving}>
             {saving ? "Saving..." : dialogMode === "add" ? "Register Student" : "Save Changes"}
           </Button>
         </DialogContent>
@@ -352,24 +352,24 @@ function StudentsPage() {
 
       {/* Course Enrollment Dialog */}
       <Dialog open={dialogMode === "enroll"} onOpenChange={() => setDialogMode(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Course Enrollment — {selectedStudent?.name}</DialogTitle></DialogHeader>
-          <div className="space-y-2 max-h-80 overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
+          <DialogHeader><DialogTitle className="text-base sm:text-lg">Course Enrollment — {selectedStudent?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-2 max-h-60 sm:max-h-80 overflow-y-auto">
             {courses.filter(c => !selectedStudent || c.department === selectedStudent.department || c.department === "Computer Science").map(course => {
               const enrolled = (form.enrolledCourses || []).includes(course.id);
               return (
                 <button key={course.id} onClick={() => toggleCourse(course.id)}
-                  className={`w-full flex items-center justify-between rounded-lg border p-3 text-left transition-colors ${enrolled ? "border-primary bg-primary/5" : "border-border hover:bg-secondary/50"}`}>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{course.code} — {course.name}</p>
-                    <p className="text-xs text-muted-foreground">{course.credits} credits • {course.teacher}</p>
+                  className={`w-full flex items-center justify-between rounded-lg border p-2.5 sm:p-3 text-left transition-colors ${enrolled ? "border-primary bg-primary/5" : "border-border hover:bg-secondary/50"}`}>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-foreground truncate">{course.code} — {course.name}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">{course.credits} credits • {course.teacher}</p>
                   </div>
-                  {enrolled && <Badge className="bg-primary text-primary-foreground">Enrolled</Badge>}
+                  {enrolled && <Badge className="bg-primary text-primary-foreground shrink-0 ml-2">Enrolled</Badge>}
                 </button>
               );
             })}
           </div>
-          <Button onClick={handleEnrollSave} className="w-full" disabled={saving}>
+          <Button onClick={handleEnrollSave} className="w-full mt-3 sm:mt-4" disabled={saving}>
             {saving ? "Saving..." : "Save Enrollment"}
           </Button>
         </DialogContent>

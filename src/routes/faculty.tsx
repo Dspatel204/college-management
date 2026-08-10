@@ -224,58 +224,58 @@ function FacultyPage() {
       <Tabs defaultValue="faculty">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Faculty Management</h1>
-            <p className="text-sm text-muted-foreground">Manage faculty, assignments & timetable</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Faculty Management</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">Manage faculty, assignments & timetable</p>
           </div>
-          <TabsList>
-            <TabsTrigger value="faculty">Faculty</TabsTrigger>
-            <TabsTrigger value="timetable">Timetable</TabsTrigger>
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="faculty" className="flex-1 sm:flex-none">Faculty</TabsTrigger>
+            <TabsTrigger value="timetable" className="flex-1 sm:flex-none">Timetable</TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="faculty">
-          <div className="mb-4 flex flex-wrap gap-3">
-            <div className="relative">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search faculty..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-64" />
+              <Input placeholder="Search faculty..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-full sm:w-64" />
             </div>
-            <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+            <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm w-full sm:w-auto">
               <option value="All">All Departments</option>
               {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
-            <Button onClick={openAdd} className="gap-2 ml-auto"><UserPlus className="h-4 w-4" /> Add Faculty</Button>
+            <Button onClick={openAdd} className="gap-2 w-full sm:w-auto sm:ml-auto"><UserPlus className="h-4 w-4" /> Add Faculty</Button>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filtered.map((f) => (
                 <Card key={f.id} className="border-0 shadow-md hover:shadow-lg transition-shadow">
-                  <CardContent className="p-5">
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{f.avatar}</div>
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-primary text-xs sm:text-sm font-bold text-primary-foreground">{f.avatar}</div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground">{f.name}</h3>
-                        <p className="text-sm text-muted-foreground">{f.employeeId} • {f.designation}</p>
+                        <h3 className="text-sm sm:text-base font-semibold text-foreground truncate">{f.name}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">{f.employeeId} • {f.designation}</p>
                         <div className="mt-2 flex flex-wrap gap-1">
-                          <Badge variant="secondary">{f.department}</Badge>
+                          <Badge variant="secondary" className="text-[10px] sm:text-xs">{f.department}</Badge>
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {f.assignedSubjects.map((s) => <Badge key={s} variant="outline" className="text-xs bg-info/10 text-info border-info/20">{s}</Badge>)}
+                        <div className="mt-1.5 sm:mt-2 flex flex-wrap gap-1">
+                          {f.assignedSubjects.map((s) => <Badge key={s} variant="outline" className="text-[10px] sm:text-xs bg-info/10 text-info border-info/20">{s}</Badge>)}
                         </div>
-                        <div className="mt-2 space-y-1">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Mail className="h-3 w-3" />{f.email}</div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Phone className="h-3 w-3" />{f.phone}</div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground"><GraduationCap className="h-3 w-3" />{f.qualification}</div>
+                        <div className="mt-1.5 sm:mt-2 space-y-0.5 sm:space-y-1">
+                          <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground"><Mail className="h-3 w-3" />{f.email}</div>
+                          <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground"><Phone className="h-3 w-3" />{f.phone}</div>
+                          <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground"><GraduationCap className="h-3 w-3" />{f.qualification}</div>
                         </div>
-                        <div className="mt-3 flex gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(f)} className="h-8 px-2"><Pencil className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="sm" onClick={() => openAssign(f)} className="h-8 px-2"><Calendar className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="sm" onClick={() => { setSelectedFaculty(f); setDialogMode("timetable"); }} className="h-8 px-2"><Clock className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(f.id)} className="h-8 px-2 text-destructive hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <div className="mt-2 sm:mt-3 flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(f)} className="h-7 w-7 sm:h-8 sm:w-8 p-0"><Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => openAssign(f)} className="h-7 w-7 sm:h-8 sm:w-8 p-0"><Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => { setSelectedFaculty(f); setDialogMode("timetable"); }} className="h-7 w-7 sm:h-8 sm:w-8 p-0"><Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(f.id)} className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive"><Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /></Button>
                         </div>
                       </div>
                     </div>

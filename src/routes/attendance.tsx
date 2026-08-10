@@ -115,40 +115,40 @@ function AttendancePage() {
 
   return (
     <DashboardLayout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Attendance</h1>
-        <p className="text-sm text-muted-foreground">Mark and manage student attendance</p>
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Attendance</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">Mark and manage student attendance</p>
       </div>
 
       {/* Filters */}
-      <Card className="mb-6 border-0 shadow-md">
-        <CardContent className="flex flex-wrap items-center gap-4 p-4">
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">Subject</label>
+      <Card className="mb-4 sm:mb-6 border-0 shadow-md">
+        <CardContent className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4">
+          <div className="w-full sm:w-auto">
+            <label className="text-[10px] sm:text-xs font-medium text-muted-foreground">Subject</label>
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              className="mt-1 block w-full rounded-lg border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm"
             >
               {SUBJECTS.map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
           </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">Date</label>
+          <div className="w-full sm:w-auto">
+            <label className="text-[10px] sm:text-xs font-medium text-muted-foreground">Date</label>
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="mt-1 block rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              className="mt-1 block w-full rounded-lg border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm"
             />
           </div>
-          <div className="ml-auto flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => markAll("present")}>
+          <div className="flex gap-2 sm:ml-auto w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={() => markAll("present")} className="flex-1 sm:flex-none text-xs">
               Mark All Present
             </Button>
-            <Button variant="outline" size="sm" onClick={() => markAll("absent")}>
+            <Button variant="outline" size="sm" onClick={() => markAll("absent")} className="flex-1 sm:flex-none text-xs">
               Mark All Absent
             </Button>
           </div>
@@ -156,34 +156,34 @@ function AttendancePage() {
       </Card>
 
       {/* Summary */}
-      <div className="mb-6 grid grid-cols-3 gap-4">
-        <div className="rounded-xl bg-success/10 p-4 text-center">
-          <p className="text-2xl font-bold text-success">{presentCount}</p>
-          <p className="text-xs text-success/80">Present</p>
+      <div className="mb-4 sm:mb-6 grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="rounded-xl bg-success/10 p-2.5 sm:p-4 text-center">
+          <p className="text-lg sm:text-2xl font-bold text-success">{presentCount}</p>
+          <p className="text-[10px] sm:text-xs text-success/80">Present</p>
         </div>
-        <div className="rounded-xl bg-destructive/10 p-4 text-center">
-          <p className="text-2xl font-bold text-destructive">{absentCount}</p>
-          <p className="text-xs text-destructive/80">Absent</p>
+        <div className="rounded-xl bg-destructive/10 p-2.5 sm:p-4 text-center">
+          <p className="text-lg sm:text-2xl font-bold text-destructive">{absentCount}</p>
+          <p className="text-[10px] sm:text-xs text-destructive/80">Absent</p>
         </div>
-        <div className="rounded-xl bg-warning/10 p-4 text-center">
-          <p className="text-2xl font-bold text-warning">{lateCount}</p>
-          <p className="text-xs text-warning/80">Late</p>
+        <div className="rounded-xl bg-warning/10 p-2.5 sm:p-4 text-center">
+          <p className="text-lg sm:text-2xl font-bold text-warning">{lateCount}</p>
+          <p className="text-[10px] sm:text-xs text-warning/80">Late</p>
         </div>
       </div>
 
       {/* Student List */}
       <Card className="border-0 shadow-md">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Students</CardTitle>
-          <Button onClick={handleSave} size="sm" disabled={saved || saving}>
-            <Save className="mr-2 h-4 w-4" />
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <CardTitle className="text-base sm:text-lg">Students</CardTitle>
+          <Button onClick={handleSave} size="sm" disabled={saved || saving} className="w-full sm:w-auto text-xs">
+            <Save className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {saving ? "Saving..." : saved ? "Saved ✓" : "Save Attendance"}
           </Button>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-8 sm:py-12">
+              <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <div className="space-y-2">
@@ -194,22 +194,22 @@ function AttendancePage() {
                 return (
                   <div
                     key={student.id}
-                    className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-secondary/50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border border-border p-2.5 sm:p-3 hover:bg-secondary/50 transition-colors gap-2 sm:gap-0"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    <div className="flex items-center gap-2.5 sm:gap-3">
+                      <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] sm:text-xs font-bold text-primary-foreground">
                         {student.avatar}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{student.name}</p>
-                        <p className="text-xs text-muted-foreground">{student.rollNo} • {student.department}</p>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-medium text-foreground truncate">{student.name}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{student.rollNo} • {student.department}</p>
                       </div>
                     </div>
                     <button
                       onClick={() => toggleStatus(student.id)}
-                      className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-colors ${config.bg} ${config.text}`}
+                      className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium transition-colors w-full sm:w-auto ${config.bg} ${config.text}`}
                     >
-                      <StatusIcon className="h-4 w-4" />
+                      <StatusIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                       {config.label}
                     </button>
                   </div>

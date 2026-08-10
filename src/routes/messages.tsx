@@ -72,58 +72,58 @@ function MessagesPage() {
 
   return (
     <DashboardLayout>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Messages</h1>
-          <p className="text-sm text-muted-foreground">Internal communication system</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Messages</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Internal communication system</p>
         </div>
-        <Button onClick={() => setComposing(!composing)} className="gap-2">
-          <MessageSquare className="h-4 w-4" /> {composing ? "Cancel" : "New Message"}
-        </Button>
+        <Button onClick={() => setComposing(!composing)} className="gap-2 w-full sm:w-auto text-xs sm:text-sm"><MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> {composing ? "Cancel" : "New Message"}</Button>
       </div>
 
       {composing && (
-        <Card className="mb-6 border-0 shadow-md">
-          <CardHeader><CardTitle className="text-lg">Compose Message</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
+        <Card className="mb-4 sm:mb-6 border-0 shadow-md">
+          <CardHeader><CardTitle className="text-base sm:text-lg">Compose Message</CardTitle></CardHeader>
+          <CardContent className="space-y-3 sm:space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground">To</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">To</label>
               <select value={newMsg.to} onChange={e => setNewMsg({ ...newMsg, to: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                className="mt-1 w-full rounded-lg border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm">
                 <option value="">Select recipient</option>
                 {recipients.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Message</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground">Message</label>
               <textarea value={newMsg.content} onChange={e => setNewMsg({ ...newMsg, content: e.target.value })}
                 rows={4} placeholder="Type your message..."
-                className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                className="mt-1 w-full rounded-lg border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm" />
             </div>
-            <Button onClick={handleSend} className="gap-2"><Send className="h-4 w-4" /> Send Message</Button>
+            <Button onClick={handleSend} className="gap-2 w-full sm:w-auto text-xs sm:text-sm"><Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Send Message</Button>
           </CardContent>
         </Card>
       )}
 
-      <div className="mb-4 relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search messages..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      <div className="mb-4 w-full">
+        <div className="relative w-full sm:max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search messages..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 w-full" />
+        </div>
       </div>
 
       <div className="space-y-3">
         {filtered.map(msg => (
           <Card key={msg.id} className={`border-0 shadow-sm hover:shadow-md transition-shadow ${!msg.read ? "ring-1 ring-primary/20" : ""}`}>
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-4">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-sm font-semibold text-foreground">{msg.from}</span>
-                    <span className="text-xs text-muted-foreground">→</span>
-                    <span className="text-sm text-muted-foreground">{msg.to}</span>
+                  <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                    <span className="text-xs sm:text-sm font-semibold text-foreground">{msg.from}</span>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">→</span>
+                    <span className="text-xs sm:text-sm text-muted-foreground">{msg.to}</span>
                     {!msg.read && <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5">New</Badge>}
                   </div>
-                  <p className="text-sm text-foreground">{msg.content}</p>
-                  <p className="text-xs text-muted-foreground mt-2">{msg.timestamp}</p>
+                  <p className="text-xs sm:text-sm text-foreground line-clamp-2">{msg.content}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1.5 sm:mt-2">{msg.timestamp}</p>
                 </div>
               </div>
             </CardContent>

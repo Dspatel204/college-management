@@ -30,25 +30,25 @@ function SubjectsPage() {
 
   return (
     <DashboardLayout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Subjects</h1>
-        <p className="text-sm text-muted-foreground">Manage courses and subjects</p>
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Subjects</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">Manage courses and subjects</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
         {subjectDetails.map((subj) => (
           <Card key={subj.code} className="border-0 shadow-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary">
-                  <BookOpen className="h-5 w-5 text-primary-foreground" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="mb-3 sm:mb-4 flex items-center gap-2.5 sm:gap-3">
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-primary">
+                  <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">{subj.name}</h3>
-                  <p className="text-xs text-muted-foreground">{subj.code} • {subj.credits} Credits</p>
+                  <h3 className="text-sm sm:text-base font-semibold text-foreground">{subj.name}</h3>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">{subj.code} • {subj.credits} Credits</p>
                 </div>
               </div>
-              <div className="space-y-2 text-sm">
+              <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                 <p className="text-muted-foreground">
                   <span className="font-medium text-foreground">Teacher:</span> {subj.teacher}
                 </p>

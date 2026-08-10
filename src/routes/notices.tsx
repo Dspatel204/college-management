@@ -94,14 +94,14 @@ function NoticesPage() {
 
   return (
     <DashboardLayout>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Notice Board</h1>
-          <p className="text-sm text-muted-foreground">Announcements & notifications</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Notice Board</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Announcements & notifications</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="general">General</SelectItem>
@@ -111,34 +111,36 @@ function NoticesPage() {
               <SelectItem value="urgent">Urgent</SelectItem>
             </SelectContent>
           </Select>
-          {isAdmin && <Button onClick={() => setAddDialog(true)} className="gap-2"><Plus className="h-4 w-4" /> Post Notice</Button>}
+          {isAdmin && <Button onClick={() => setAddDialog(true)} className="gap-2 w-full sm:w-auto text-xs sm:text-sm"><Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Post Notice</Button>}
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {filtered.map(notice => (
           <Card key={notice.id} className={`border-0 shadow-md transition-shadow hover:shadow-lg ${notice.pinned ? "ring-2 ring-primary/20" : ""}`}>
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-4">
+            <CardContent className="p-3 sm:p-5">
+              <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    {notice.pinned && <Pin className="h-4 w-4 text-primary" />}
-                    <h3 className="font-semibold text-foreground">{notice.title}</h3>
-                    <Badge variant="outline" className={categoryColors[notice.category]}>{notice.category}</Badge>
-                    {notice.audience !== "all" && <Badge variant="secondary" className="text-xs">{notice.audience}</Badge>}
+                  <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                    {notice.pinned && <Pin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />}
+                    <h3 className="text-sm sm:text-base font-semibold text-foreground">{notice.title}</h3>
                   </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{notice.content}</p>
-                  <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap gap-1.5 mb-1.5 sm:mb-2">
+                    <Badge variant="outline" className={`text-[10px] sm:text-xs ${categoryColors[notice.category]}`}>{notice.category}</Badge>
+                    {notice.audience !== "all" && <Badge variant="secondary" className="text-[10px] sm:text-xs">{notice.audience}</Badge>}
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{notice.content}</p>
+                  <div className="mt-2 sm:mt-3 flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{notice.date}</span>
                     <span>Posted by: {notice.postedBy}</span>
                   </div>
                 </div>
-                <div className="flex gap-1 shrink-0">
-                  <Button variant="ghost" size="sm" onClick={() => setViewNotice(notice)} className="h-8 px-2"><Eye className="h-3.5 w-3.5" /></Button>
+                <div className="flex gap-0.5 sm:gap-1 shrink-0">
+                  <Button variant="ghost" size="sm" onClick={() => setViewNotice(notice)} className="h-7 w-7 sm:h-8 sm:w-8 p-0"><Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" /></Button>
                   {isAdmin && (
                     <>
-                      <Button variant="ghost" size="sm" onClick={() => togglePin(notice.id)} className="h-8 px-2"><Pin className={`h-3.5 w-3.5 ${notice.pinned ? "text-primary" : ""}`} /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteNotice(notice.id)} className="h-8 px-2 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => togglePin(notice.id)} className="h-7 w-7 sm:h-8 sm:w-8 p-0"><Pin className={`h-3 w-3 sm:h-3.5 sm:w-3.5 ${notice.pinned ? "text-primary" : ""}`} /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => deleteNotice(notice.id)} className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-destructive"><Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /></Button>
                     </>
                   )}
                 </div>
@@ -150,18 +152,17 @@ function NoticesPage() {
 
       {/* View Notice */}
       <Dialog open={!!viewNotice} onOpenChange={() => setViewNotice(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5" />{viewNotice?.title}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2 text-base sm:text-lg"><Megaphone className="h-4 w-4 sm:h-5 sm:w-5" />{viewNotice?.title}</DialogTitle></DialogHeader>
           {viewNotice && (
-            <div className="space-y-4">
-              <div className="flex gap-2">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className={categoryColors[viewNotice.category]}>{viewNotice.category}</Badge>
-                <Badge variant="secondary">{viewNotice.audience}</Badge>
+                <Badge variant="secondary" className="text-xs">{viewNotice.audience}</Badge>
               </div>
-              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{viewNotice.content}</p>
-              <div className="text-xs text-muted-foreground border-t border-border pt-3">
-                <p>Posted by: {viewNotice.postedBy}</p>
-                <p>Date: {viewNotice.date}</p>
+              <p className="text-xs sm:text-sm text-foreground leading-relaxed whitespace-pre-wrap">{viewNotice.content}</p>
+              <div className="text-[10px] sm:text-xs text-muted-foreground border-t border-border pt-3">
+                <p>Posted by: {viewNotice.postedBy} on {viewNotice.date}</p>
               </div>
             </div>
           )}

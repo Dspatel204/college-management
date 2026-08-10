@@ -1,191 +1,168 @@
-import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
+import axios, { type AxiosError, type AxiosResponse } from "axios";
 
 const API_BASE = "https://college-management-n6be.onrender.com/api";
 
-const apiClient: AxiosInstance = axios.create({
+const api = axios.create({
   baseURL: API_BASE,
-  headers: { "Content-Type": "application/json" },
-  timeout: 12000,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-async function requestData<T>(promise: Promise<AxiosResponse<T>>): Promise<T> {
-  try {
-    const response = await promise;
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const message = error.response?.data ?? error.message;
-      throw new Error(typeof message === "string" ? message : JSON.stringify(message));
-    }
-
-    throw error instanceof Error ? error : new Error("Unknown API error");
+api.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  (error: AxiosError) => {
+    const message =
+      (error.response?.data as { message?: string } | undefined)?.message ||
+      error.message ||
+      "Something went wrong";
+    return Promise.reject(new Error(message));
   }
+);
+
+export async function getStudents() {
+  const { data } = await api.get("/students");
+  return data;
 }
 
-type Creatable<T extends { id: string }> = Omit<T, "id">;
-type Updatable<T extends { id: string }> = Partial<Omit<T, "id">>;
-
-export type StudentQueryParams = {
-  department?: string;
-  semester?: number;
-  status?: "active" | "inactive" | "graduated";
-};
-
-export type AttendanceQueryParams = {
-  date?: string;
-  subject?: string;
-};
-
-export type ExamResultQueryParams = {
-  studentId?: string;
-  subject?: string;
-  examType?: string;
-  department?: string;
-  semester?: string;
-};
-
-export type ReportQueryParams = {
-  department?: string;
-};
-
-export type CreateStudentPayload = Creatable<Student>;
-export type UpdateStudentPayload = Updatable<Student>;
-export type CreateFacultyPayload = Creatable<Faculty>;
-export type UpdateFacultyPayload = Updatable<Faculty>;
-export type CreateFeePayload = Creatable<FeeRecord>;
-export type UpdateFeePayload = Updatable<FeeRecord>;
-export type CreateExamSchedulePayload = Creatable<ExamSchedule>;
-export type CreateExamResultPayload = Creatable<ExamResult>;
-export type UpdateExamResultPayload = Updatable<ExamResult>;
-export type CreateCoursePayload = Creatable<Course>;
-export type UpdateCoursePayload = Updatable<Course>;
-export type CreateTimetableEntryPayload = Creatable<TimetableEntry>;
-
-export type AttendanceRecordPayload = {
-  studentId: string;
-  status: "present" | "absent" | "late";
-};
-
-export type SaveAttendancePayload = {
-  date: string;
-  subject: string;
-  records: AttendanceRecordPayload[];
-};
-
-export async function getStudents(): Promise<Student[]> {
-  return requestData(apiClient.get<Student[]>("/students"));
+export async function getStudentById(id: string) {
+  const { data } = await api.get(`/students/${encodeURIComponent(id)}`);
+  return data;
 }
 
-export async function getStudentById(id: string): Promise<Student> {
-  return requestData(apiClient.get<Student>(`/students/${encodeURIComponent(id)}`));
+export async function createStudent(data: CreateStudentInput) {
+  const { data: result } = await api.post("/students", data);
+  return result;
 }
 
-export async function createStudent(data: CreateStudentPayload): Promise<Student> {
-  return requestData(apiClient.post<Student>("/students", data));
+export async function updateStudent(id: string, data: UpdateStudentInput) {
+  const { data: result } = await api.put(`/students/${encodeURIComponent(id)}`, data);
+  return result;
 }
 
-export async function updateStudent(id: string, data: UpdateStudentPayload): Promise<Student> {
-  return requestData(apiClient.put<Student>(`/students/${encodeURIComponent(id)}`, data));
+export async function deleteStudent(id: string) {
+  const { data: result } = await api.delete(`/students/${encodeURIComponent(id)}`);
+  return result;
 }
 
-export async function deleteStudent(id: string): Promise<void> {
-  return requestData(apiClient.delete<void>(`/students/${encodeURIComponent(id)}`));
+export async function getFaculty() {
+  const { data } = await api.get("/faculty");
+  return data;
 }
 
-export async function getFaculty(): Promise<Faculty[]> {
-  return requestData(apiClient.get<Faculty[]>("/faculty"));
+export async function getFacultyById(id: string) {
+  const { data } = await api.get(`/faculty/${encodeURIComponent(id)}`);
+  return data;
 }
 
-export async function getFacultyById(id: string): Promise<Faculty> {
-  return requestData(apiClient.get<Faculty>(`/faculty/${encodeURIComponent(id)}`));
+export async function createFaculty(data: CreateFacultyInput) {
+  const { data: result } = await api.post("/faculty", data);
+  return result;
 }
 
-export async function createFaculty(data: CreateFacultyPayload): Promise<Faculty> {
-  return requestData(apiClient.post<Faculty>("/faculty", data));
+export async function updateFacultyById(id: string, data: UpdateFacultyInput) {
+  const { data: result } = await api.put(`/faculty/${encodeURIComponent(id)}`, data);
+  return result;
 }
 
-export async function updateFacultyById(id: string, data: UpdateFacultyPayload): Promise<Faculty> {
-  return requestData(apiClient.put<Faculty>(`/faculty/${encodeURIComponent(id)}`, data));
+export async function deleteFacultyById(id: string) {
+  const { data: result } = await api.delete(`/faculty/${encodeURIComponent(id)}`);
+  return result;
 }
 
-export async function deleteFacultyById(id: string): Promise<void> {
-  return requestData(apiClient.delete<void>(`/faculty/${encodeURIComponent(id)}`));
+export async function getAttendance(params?: { date?: string; subject?: string }) {
+  const { data } = await api.get("/attendance", { params });
+  return data;
 }
 
-export async function getAttendance(params?: AttendanceQueryParams): Promise<AttendanceRecord[]> {
-  return requestData(apiClient.get<AttendanceRecord[]>("/attendance", { params }));
+export async function saveAttendance(payload: SaveAttendancePayload) {
+  const { data } = await api.post("/attendance", payload);
+  return data;
 }
 
-export async function saveAttendance(data: SaveAttendancePayload): Promise<AttendanceRecord[]> {
-  return requestData(apiClient.post<AttendanceRecord[]>("/attendance", data));
+export async function getFees() {
+  const { data } = await api.get("/fees");
+  return data;
 }
 
-export async function getFees(): Promise<FeeRecord[]> {
-  return requestData(apiClient.get<FeeRecord[]>("/fees"));
+export async function createFee(data: CreateFeeInput) {
+  const { data: result } = await api.post("/fees", data);
+  return result;
 }
 
-export async function createFee(data: CreateFeePayload): Promise<FeeRecord> {
-  return requestData(apiClient.post<FeeRecord>("/fees", data));
+export async function updateFee(id: string, data: UpdateFeeInput) {
+  const { data: result } = await api.put(`/fees/${encodeURIComponent(id)}`, data);
+  return result;
 }
 
-export async function updateFee(id: string, data: UpdateFeePayload): Promise<FeeRecord> {
-  return requestData(apiClient.put<FeeRecord>(`/fees/${encodeURIComponent(id)}`, data));
+export async function getExamSchedules() {
+  const { data } = await api.get("/exams");
+  return data;
 }
 
-export async function getExamSchedules(): Promise<ExamSchedule[]> {
-  return requestData(apiClient.get<ExamSchedule[]>("/exams"));
+export async function createExamSchedule(data: CreateExamScheduleInput) {
+  const { data: result } = await api.post("/exams", data);
+  return result;
 }
 
-export async function createExamSchedule(data: CreateExamSchedulePayload): Promise<ExamSchedule> {
-  return requestData(apiClient.post<ExamSchedule>("/exams", data));
+export async function getExamResults(params?: GetExamResultsParams) {
+  const { data } = await api.get("/results", { params });
+  return data;
 }
 
-export async function getExamResults(params?: ExamResultQueryParams): Promise<ExamResult[]> {
-  return requestData(apiClient.get<ExamResult[]>("/results", { params }));
+export async function createExamResult(data: CreateExamResultInput) {
+  const { data: result } = await api.post("/results", data);
+  return result;
 }
 
-export async function createExamResult(data: CreateExamResultPayload): Promise<ExamResult> {
-  return requestData(apiClient.post<ExamResult>("/results", data));
+export async function updateExamResult(id: string, data: UpdateExamResultInput) {
+  const { data: result } = await api.put(`/results/${encodeURIComponent(id)}`, data);
+  return result;
 }
 
-export async function updateExamResult(id: string, data: UpdateExamResultPayload): Promise<ExamResult> {
-  return requestData(apiClient.put<ExamResult>(`/results/${encodeURIComponent(id)}`, data));
+export async function deleteExamResult(id: string) {
+  const { data: result } = await api.delete(`/results/${encodeURIComponent(id)}`);
+  return result;
 }
 
-export async function deleteExamResult(id: string): Promise<void> {
-  return requestData(apiClient.delete<void>(`/results/${encodeURIComponent(id)}`));
+export async function getCourses() {
+  const { data } = await api.get("/courses");
+  return data;
 }
 
-export async function getCourses(): Promise<Course[]> {
-  return requestData(apiClient.get<Course[]>("/courses"));
+export async function createCourse(data: CreateCourseInput) {
+  const { data: result } = await api.post("/courses", data);
+  return result;
 }
 
-export async function createCourse(data: CreateCoursePayload): Promise<Course> {
-  return requestData(apiClient.post<Course>("/courses", data));
+export async function updateCourse(id: string, data: UpdateCourseInput) {
+  const { data: result } = await api.put(`/courses/${encodeURIComponent(id)}`, data);
+  return result;
 }
 
-export async function updateCourse(id: string, data: UpdateCoursePayload): Promise<Course> {
-  return requestData(apiClient.put<Course>(`/courses/${encodeURIComponent(id)}`, data));
+export async function deleteCourse(id: string) {
+  const { data: result } = await api.delete(`/courses/${encodeURIComponent(id)}`);
+  return result;
 }
 
-export async function deleteCourse(id: string): Promise<void> {
-  return requestData(apiClient.delete<void>(`/courses/${encodeURIComponent(id)}`));
+export async function getReports(params?: { department?: string }) {
+  const { data } = await api.get("/reports", { params });
+  return data;
 }
 
-export async function getReports(params?: ReportQueryParams): Promise<ReportData> {
-  return requestData(apiClient.get<ReportData>("/reports", { params }));
+export async function getTimetable() {
+  const { data } = await api.get("/timetable");
+  return data;
 }
 
-export async function getTimetable(): Promise<TimetableEntry[]> {
-  return requestData(apiClient.get<TimetableEntry[]>("/timetable"));
+export async function createTimetableEntry(data: CreateTimetableEntryInput) {
+  const { data: result } = await api.post("/timetable", data);
+  return result;
 }
 
-export async function createTimetableEntry(data: CreateTimetableEntryPayload): Promise<TimetableEntry> {
-  return requestData(apiClient.post<TimetableEntry>("/timetable", data));
-}
-
-export async function deleteTimetableEntry(id: string): Promise<void> {
-  return requestData(apiClient.delete<void>(`/timetable/${encodeURIComponent(id)}`));
+export async function deleteTimetableEntry(id: string) {
+  const { data: result } = await api.delete(`/timetable/${encodeURIComponent(id)}`);
+  return result;
 }
 
 export type Student = {
@@ -324,4 +301,103 @@ export type ReportData = {
     totalFees: number;
     totalCollected: number;
   };
+};
+
+export type CreateStudentInput = {
+  name: string;
+  rollNo: string;
+  department: string;
+  semester: number;
+  email: string;
+  phone: string;
+  address?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  status?: "active" | "inactive" | "graduated";
+  enrolledCourses?: string[];
+};
+
+export type UpdateStudentInput = Partial<CreateStudentInput>;
+
+export type CreateFacultyInput = {
+  name: string;
+  employeeId: string;
+  department: string;
+  designation: string;
+  email: string;
+  phone: string;
+  assignedSubjects?: string[];
+  assignedClasses?: string[];
+  qualification?: string;
+};
+
+export type UpdateFacultyInput = Partial<CreateFacultyInput>;
+
+export type SaveAttendancePayload = {
+  date: string;
+  subject: string;
+  records: Array<{ studentId: string; status: "present" | "absent" | "late" }>;
+};
+
+export type CreateFeeInput = {
+  studentId: string;
+  type: "tuition" | "exam" | "library" | "hostel" | "lab";
+  amount: number;
+  paid?: number;
+  dueDate?: string;
+  paidDate?: string;
+  status?: "paid" | "partial" | "pending" | "overdue";
+  receiptNo?: string;
+};
+
+export type UpdateFeeInput = Partial<CreateFeeInput>;
+
+export type CreateExamScheduleInput = {
+  subject: string;
+  date: string;
+  time: string;
+  room: string;
+  department?: string;
+  semester?: number;
+  type?: "midterm" | "final" | "internal";
+};
+
+export type GetExamResultsParams = {
+  studentId?: string;
+  subject?: string;
+  examType?: string;
+  department?: string;
+  semester?: string;
+};
+
+export type CreateExamResultInput = {
+  studentId: string;
+  subject: string;
+  examType?: "midterm" | "final" | "internal";
+  marksObtained: number;
+  totalMarks: number;
+};
+
+export type UpdateExamResultInput = Partial<CreateExamResultInput>;
+
+export type CreateCourseInput = {
+  name: string;
+  code: string;
+  department: string;
+  credits?: number;
+  semester?: number;
+  teacher?: string;
+  description?: string;
+};
+
+export type UpdateCourseInput = Partial<CreateCourseInput>;
+
+export type CreateTimetableEntryInput = {
+  day: string;
+  time: string;
+  subject: string;
+  facultyId: string;
+  department: string;
+  semester: number;
+  room: string;
 };
