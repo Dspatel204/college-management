@@ -13,14 +13,20 @@ app.get('/', (req, res) => {
 });
 
 const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/college_db';
+let mongoConnected = false;
+
 mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 })
-  .then(() => console.log('MongoDB connected'))
+  .then(() => {
+    console.log('MongoDB connected');
+    mongoConnected = true;
+  })
   .catch((err) => {
     console.error('MongoDB connection failed:', err.message);
     console.log('Running without MongoDB persistence');
   });
 
 app.use('/api', require('./routes/exampleRoutes'));
+
 app.use('/api', require('./routes/collegeRoutes'));
 
 app.use((err, req, res, next) => {
@@ -36,4 +42,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app };
+module.exports = { app, mongoConnected };
