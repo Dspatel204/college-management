@@ -1,4 +1,4 @@
-const { mongoConnected } = require('../server');
+const { getMongoConnected } = require('../state');
 const { Student, Faculty, Timetable, Attendance, Fee, ExamSchedule, ExamResult, Course } = require('../models');
 const { readJsonFile, writeJsonFile } = require('../data-store');
 
@@ -14,7 +14,7 @@ const calculateGrade = (percentage) => {
 
 const getStudents = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const students = await Student.find();
       res.json(students);
     } else {
@@ -28,7 +28,7 @@ const getStudents = async (req, res) => {
 
 const getStudentById = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const student = await Student.findById(req.params.id);
       if (!student) return res.status(404).json({ message: 'Student not found' });
       res.json(student);
@@ -49,7 +49,7 @@ const createStudent = async (req, res) => {
       return res.status(400).json({ message: 'Required fields missing' });
     }
 
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const student = await Student.create({
         ...req.body,
         status: req.body.status || 'active'
@@ -73,7 +73,7 @@ const createStudent = async (req, res) => {
 
 const updateStudent = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const student = await Student.findByIdAndUpdate(
         req.params.id,
         { $set: req.body },
@@ -96,7 +96,7 @@ const updateStudent = async (req, res) => {
 
 const deleteStudent = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const student = await Student.findByIdAndDelete(req.params.id);
       if (!student) return res.status(404).json({ message: 'Student not found' });
       res.json({ message: 'Student deleted successfully' });
@@ -115,7 +115,7 @@ const deleteStudent = async (req, res) => {
 
 const getFaculty = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const faculty = await Faculty.find();
       res.json(faculty);
     } else {
@@ -129,7 +129,7 @@ const getFaculty = async (req, res) => {
 
 const getFacultyById = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const item = await Faculty.findById(req.params.id);
       if (!item) return res.status(404).json({ message: 'Faculty not found' });
       res.json(item);
@@ -150,7 +150,7 @@ const createFaculty = async (req, res) => {
       return res.status(400).json({ message: 'Required fields missing' });
     }
 
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const item = await Faculty.create({
         ...req.body,
         assignedSubjects: req.body.assignedSubjects || [],
@@ -176,7 +176,7 @@ const createFaculty = async (req, res) => {
 
 const updateFaculty = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const item = await Faculty.findByIdAndUpdate(
         req.params.id,
         { $set: req.body },
@@ -199,7 +199,7 @@ const updateFaculty = async (req, res) => {
 
 const deleteFaculty = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const item = await Faculty.findByIdAndDelete(req.params.id);
       if (!item) return res.status(404).json({ message: 'Faculty not found' });
       res.json({ message: 'Faculty deleted successfully' });
@@ -218,7 +218,7 @@ const deleteFaculty = async (req, res) => {
 
 const getTimetable = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const timetable = await Timetable.find();
       res.json(timetable);
     } else {
@@ -236,7 +236,7 @@ const createTimetableEntry = async (req, res) => {
       return res.status(400).json({ message: 'Required fields missing' });
     }
 
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const entry = await Timetable.create(req.body);
       res.status(201).json(entry);
     } else {
@@ -256,7 +256,7 @@ const createTimetableEntry = async (req, res) => {
 
 const deleteTimetableEntry = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const entry = await Timetable.findByIdAndDelete(req.params.id);
       if (!entry) return res.status(404).json({ message: 'Timetable entry not found' });
       res.json({ message: 'Timetable entry deleted successfully' });
@@ -275,7 +275,7 @@ const deleteTimetableEntry = async (req, res) => {
 
 const getAttendance = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       let query = {};
       if (req.query.date) query.date = req.query.date;
       if (req.query.subject) query.subject = req.query.subject;
@@ -299,7 +299,7 @@ const saveAttendance = async (req, res) => {
       return res.status(400).json({ message: 'Date and subject are required' });
     }
 
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       await Attendance.deleteMany({ date, subject });
       const nextRecords = records.map((record) => ({ ...record, date, subject }));
       await Attendance.insertMany(nextRecords);
@@ -319,7 +319,7 @@ const saveAttendance = async (req, res) => {
 
 const getFees = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const fees = await Fee.find();
       res.json(fees);
     } else {
@@ -340,7 +340,7 @@ const createFee = async (req, res) => {
     const amount = Number(req.body.amount);
     const paid = Number(req.body.paid ?? amount);
 
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const fee = await Fee.create({
         studentId: req.body.studentId,
         type: req.body.type || 'tuition',
@@ -376,7 +376,7 @@ const createFee = async (req, res) => {
 
 const updateFee = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const fee = await Fee.findByIdAndUpdate(
         req.params.id,
         { $set: req.body },
@@ -399,7 +399,7 @@ const updateFee = async (req, res) => {
 
 const getExamSchedules = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const schedules = await ExamSchedule.find();
       res.json(schedules);
     } else {
@@ -417,7 +417,7 @@ const createExamSchedule = async (req, res) => {
       return res.status(400).json({ message: 'Required fields missing' });
     }
 
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const entry = await ExamSchedule.create({
         ...req.body,
         department: req.body.department || 'Computer Science',
@@ -453,7 +453,7 @@ const createExamResult = async (req, res) => {
     const obtained = Number(marksObtained);
     const total = Number(totalMarks);
 
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const result = await ExamResult.create({
         studentId,
         subject,
@@ -487,7 +487,7 @@ const getExamResults = async (req, res) => {
   try {
     const { studentId, subject, examType, department, semester } = req.query;
 
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       let query = {};
       if (studentId) query.studentId = studentId;
       if (subject) query.subject = subject;
@@ -532,7 +532,7 @@ const getExamResults = async (req, res) => {
 
 const updateExamResult = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const result = await ExamResult.findById(req.params.id);
       if (!result) return res.status(404).json({ message: 'Result not found' });
 
@@ -572,7 +572,7 @@ const updateExamResult = async (req, res) => {
 
 const deleteExamResult = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const result = await ExamResult.findByIdAndDelete(req.params.id);
       if (!result) return res.status(404).json({ message: 'Result not found' });
       res.json({ message: 'Result deleted successfully' });
@@ -591,7 +591,7 @@ const deleteExamResult = async (req, res) => {
 
 const getCourses = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const courses = await Course.find();
       res.json(courses);
     } else {
@@ -605,7 +605,7 @@ const getCourses = async (req, res) => {
 
 const getCourseById = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const course = await Course.findById(req.params.id);
       if (!course) return res.status(404).json({ message: 'Course not found' });
       res.json(course);
@@ -627,7 +627,7 @@ const createCourse = async (req, res) => {
       return res.status(400).json({ message: 'Required fields missing' });
     }
 
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const course = await Course.create({
         name,
         code,
@@ -661,7 +661,7 @@ const createCourse = async (req, res) => {
 
 const updateCourse = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const course = await Course.findByIdAndUpdate(
         req.params.id,
         { $set: req.body },
@@ -684,7 +684,7 @@ const updateCourse = async (req, res) => {
 
 const deleteCourse = async (req, res) => {
   try {
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const course = await Course.findByIdAndDelete(req.params.id);
       if (!course) return res.status(404).json({ message: 'Course not found' });
       res.json({ message: 'Course deleted successfully' });
@@ -705,7 +705,7 @@ const getReports = async (req, res) => {
   try {
     const { department } = req.query;
 
-    if (mongoConnected) {
+    if (getMongoConnected()) {
       const studentQuery = department ? { department } : {};
       const students = await Student.find(studentQuery);
       const studentIds = students.map((s) => s._id);

@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const mongoose = require('mongoose');
+const { setMongoConnected } = require('./state');
 
 const app = express();
 
@@ -13,12 +14,11 @@ app.get('/', (req, res) => {
 });
 
 const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/college_db';
-let mongoConnected = false;
 
 mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 })
   .then(() => {
     console.log('MongoDB connected');
-    mongoConnected = true;
+    setMongoConnected(true);
   })
   .catch((err) => {
     console.error('MongoDB connection failed:', err.message);
@@ -26,7 +26,6 @@ mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 })
   });
 
 app.use('/api', require('./routes/exampleRoutes'));
-
 app.use('/api', require('./routes/collegeRoutes'));
 
 app.use((err, req, res, next) => {
@@ -42,4 +41,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app, mongoConnected };
+module.exports = { app };
