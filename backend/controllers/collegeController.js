@@ -1,24 +1,13 @@
 const {
-  students,
-  faculty,
-  timetable,
-  attendance,
-  fees,
-  examSchedules,
-  examResults,
-  courses,
-  SUBJECTS,
-  DEPARTMENTS
-} = require('../models/collegeData');
-
-let studentStore = [...students];
-let facultyStore = [...faculty];
-let timetableStore = [...timetable];
-let attendanceStore = [...attendance];
-let feeStore = [...fees];
-let examScheduleStore = [...examSchedules];
-let examResultStore = [...examResults];
-let courseStore = [...courses];
+  Student,
+  Faculty,
+  Timetable,
+  Attendance,
+  Fee,
+  ExamSchedule,
+  ExamResult,
+  Course,
+} = require('../models');
 
 const calculateGrade = (percentage) => {
   if (percentage >= 90) return 'A+';
@@ -30,372 +19,489 @@ const calculateGrade = (percentage) => {
   return 'F';
 };
 
-const getStudents = (req, res) => {
-  res.json(studentStore);
-};
-
-const getStudentById = (req, res) => {
-  const student = studentStore.find((item) => item.id === req.params.id);
-  if (!student) return res.status(404).json({ message: 'Student not found' });
-  res.json(student);
-};
-
-const createStudent = (req, res) => {
-  if (!req.body.name || !req.body.rollNo || !req.body.email || !req.body.phone) {
-    return res.status(400).json({ message: 'Required fields missing' });
+const getStudents = async (req, res) => {
+  try {
+    const students = await Student.find();
+    res.json(students);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
-
-  const student = {
-    id: `s${Date.now()}`,
-    ...req.body,
-    status: req.body.status || 'active'
-  };
-
-  studentStore.push(student);
-  res.status(201).json(student);
 };
 
-const updateStudent = (req, res) => {
-  const index = studentStore.findIndex((item) => item.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Student not found' });
-
-  studentStore[index] = { ...studentStore[index], ...req.body };
-  res.json(studentStore[index]);
-};
-
-const deleteStudent = (req, res) => {
-  const index = studentStore.findIndex((item) => item.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Student not found' });
-
-  studentStore.splice(index, 1);
-  res.json({ message: 'Student deleted successfully' });
-};
-
-const getFaculty = (req, res) => {
-  res.json(facultyStore);
-};
-
-const getFacultyById = (req, res) => {
-  const item = facultyStore.find((entry) => entry.id === req.params.id);
-  if (!item) return res.status(404).json({ message: 'Faculty not found' });
-  res.json(item);
-};
-
-const createFaculty = (req, res) => {
-  if (!req.body.name || !req.body.employeeId || !req.body.email || !req.body.phone) {
-    return res.status(400).json({ message: 'Required fields missing' });
+const getStudentById = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    res.json(student);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
-
-  const item = {
-    id: `f${Date.now()}`,
-    ...req.body,
-    assignedSubjects: req.body.assignedSubjects || [],
-    assignedClasses: req.body.assignedClasses || []
-  };
-
-  facultyStore.push(item);
-  res.status(201).json(item);
 };
 
-const updateFaculty = (req, res) => {
-  const index = facultyStore.findIndex((entry) => entry.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Faculty not found' });
-
-  facultyStore[index] = { ...facultyStore[index], ...req.body };
-  res.json(facultyStore[index]);
-};
-
-const deleteFaculty = (req, res) => {
-  const index = facultyStore.findIndex((entry) => entry.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Faculty not found' });
-
-  facultyStore.splice(index, 1);
-  res.json({ message: 'Faculty deleted successfully' });
-};
-
-const getTimetable = (req, res) => {
-  res.json(timetableStore);
-};
-
-const createTimetableEntry = (req, res) => {
-  if (!req.body.day || !req.body.time || !req.body.subject || !req.body.facultyId || !req.body.room) {
-    return res.status(400).json({ message: 'Required fields missing' });
+const createStudent = async (req, res) => {
+  try {
+    if (!req.body.name || !req.body.rollNo || !req.body.email || !req.body.phone) {
+      return res.status(400).json({ message: 'Required fields missing' });
+    }
+    const student = await Student.create({
+      ...req.body,
+      status: req.body.status || 'active'
+    });
+    res.status(201).json(student);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
-
-  const entry = {
-    id: `tt${Date.now()}`,
-    ...req.body
-  };
-
-  timetableStore.push(entry);
-  res.status(201).json(entry);
 };
 
-const deleteTimetableEntry = (req, res) => {
-  const index = timetableStore.findIndex((entry) => entry.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Timetable entry not found' });
-
-  timetableStore.splice(index, 1);
-  res.json({ message: 'Timetable entry deleted successfully' });
-};
-
-const getAttendance = (req, res) => {
-  const { date, subject } = req.query;
-  let result = attendanceStore;
-
-  if (date) result = result.filter((entry) => entry.date === date);
-  if (subject) result = result.filter((entry) => entry.subject === subject);
-
-  res.json(result);
-};
-
-const saveAttendance = (req, res) => {
-  const { date, subject, records = [] } = req.body;
-  if (!date || !subject) {
-    return res.status(400).json({ message: 'Date and subject are required' });
+const updateStudent = async (req, res) => {
+  try {
+    const student = await Student.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    res.json(student);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
-
-  attendanceStore = attendanceStore.filter((entry) => !(entry.date === date && entry.subject === subject));
-  const nextRecords = records.map((record) => ({ ...record, date, subject }));
-  attendanceStore = [...attendanceStore, ...nextRecords];
-
-  res.status(201).json(nextRecords);
 };
 
-const getFees = (req, res) => {
-  res.json(feeStore);
-};
-
-const createFee = (req, res) => {
-  if (!req.body.studentId || !req.body.amount) {
-    return res.status(400).json({ message: 'Student and amount are required' });
+const deleteStudent = async (req, res) => {
+  try {
+    const student = await Student.findByIdAndDelete(req.params.id);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    res.json({ message: 'Student deleted successfully' });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
-
-  const amount = Number(req.body.amount);
-  const paid = Number(req.body.paid ?? amount);
-  const fee = {
-    id: `f${Date.now()}`,
-    studentId: req.body.studentId,
-    type: req.body.type || 'tuition',
-    amount,
-    paid,
-    dueDate: req.body.dueDate || new Date().toISOString().split('T')[0],
-    paidDate: req.body.paidDate || new Date().toISOString().split('T')[0],
-    status: req.body.status || (paid >= amount ? 'paid' : paid > 0 ? 'partial' : 'pending'),
-    receiptNo: req.body.receiptNo || `REC-${Date.now().toString().slice(-6)}`
-  };
-
-  feeStore.push(fee);
-  res.status(201).json(fee);
 };
 
-const updateFee = (req, res) => {
-  const index = feeStore.findIndex((entry) => entry.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Fee record not found' });
-
-  feeStore[index] = { ...feeStore[index], ...req.body };
-  res.json(feeStore[index]);
-};
-
-const getExamSchedules = (req, res) => {
-  res.json(examScheduleStore);
-};
-
-const createExamSchedule = (req, res) => {
-  if (!req.body.subject || !req.body.date || !req.body.time || !req.body.room) {
-    return res.status(400).json({ message: 'Required fields missing' });
+const getFaculty = async (req, res) => {
+  try {
+    const faculty = await Faculty.find();
+    res.json(faculty);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
-
-  const entry = {
-    id: `e${Date.now()}`,
-    department: 'Computer Science',
-    semester: 4,
-    type: 'midterm',
-    ...req.body
-  };
-
-  examScheduleStore.push(entry);
-  res.status(201).json(entry);
 };
 
-const createExamResult = (req, res) => {
-  const { studentId, subject, examType, marksObtained, totalMarks } = req.body;
-  if (!studentId || !subject || !examType || marksObtained === undefined || totalMarks === undefined) {
-    return res.status(400).json({ message: 'Required fields missing' });
+const getFacultyById = async (req, res) => {
+  try {
+    const item = await Faculty.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Faculty not found' });
+    res.json(item);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
-
-  const obtained = Number(marksObtained);
-  const total = Number(totalMarks);
-  const result = {
-    id: `r${Date.now()}`,
-    studentId,
-    subject,
-    examType,
-    marksObtained: obtained,
-    totalMarks: total,
-    grade: calculateGrade((obtained / total) * 100),
-  };
-
-  examResultStore.push(result);
-  res.status(201).json(result);
 };
 
-const getExamResults = (req, res) => {
-  const { studentId, subject, examType, department, semester } = req.query;
-  let result = [...examResultStore];
-
-  if (studentId) result = result.filter((entry) => entry.studentId === studentId);
-  if (subject) result = result.filter((entry) => entry.subject === subject);
-  if (examType) result = result.filter((entry) => entry.examType === examType);
-
-  if (department || semester) {
-    const studentIds = (department || semester)
-      ? studentStore
-          .filter((s) => {
-            const matchDept = !department || s.department === department;
-            const matchSem = !semester || s.semester === Number(semester);
-            return matchDept && matchSem;
-          })
-          .map((s) => s.id)
-      : studentStore.map((s) => s.id);
-    result = result.filter((entry) => studentIds.includes(entry.studentId));
+const createFaculty = async (req, res) => {
+  try {
+    if (!req.body.name || !req.body.employeeId || !req.body.email || !req.body.phone) {
+      return res.status(400).json({ message: 'Required fields missing' });
+    }
+    const item = await Faculty.create({
+      ...req.body,
+      assignedSubjects: req.body.assignedSubjects || [],
+      assignedClasses: req.body.assignedClasses || []
+    });
+    res.status(201).json(item);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
-
-  res.json(result);
 };
 
-const updateExamResult = (req, res) => {
-  const index = examResultStore.findIndex((entry) => entry.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Result not found' });
-
-  const existing = examResultStore[index];
-  const merged = { ...existing, ...req.body };
-  if (req.body.marksObtained !== undefined || req.body.totalMarks !== undefined) {
-    const obtained = Number(merged.marksObtained ?? existing.marksObtained);
-    const total = Number(merged.totalMarks ?? existing.totalMarks);
-    merged.marksObtained = obtained;
-    merged.totalMarks = total;
-    merged.grade = calculateGrade((obtained / total) * 100);
+const updateFaculty = async (req, res) => {
+  try {
+    const item = await Faculty.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+    if (!item) return res.status(404).json({ message: 'Faculty not found' });
+    res.json(item);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
-  examResultStore[index] = merged;
-  res.json(examResultStore[index]);
 };
 
-const deleteExamResult = (req, res) => {
-  const index = examResultStore.findIndex((entry) => entry.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Result not found' });
-
-  examResultStore.splice(index, 1);
-  res.json({ message: 'Result deleted successfully' });
-};
-
-const getCourses = (req, res) => {
-  res.json(courseStore);
-};
-
-const getCourseById = (req, res) => {
-  const course = courseStore.find((entry) => entry.id === req.params.id);
-  if (!course) return res.status(404).json({ message: 'Course not found' });
-  res.json(course);
-};
-
-const createCourse = (req, res) => {
-  const { name, code, department, credits, semester, teacher, description } = req.body;
-  if (!name || !code || !department || !credits || !semester || !teacher || !description) {
-    return res.status(400).json({ message: 'Required fields missing' });
+const deleteFaculty = async (req, res) => {
+  try {
+    const item = await Faculty.findByIdAndDelete(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Faculty not found' });
+    res.json({ message: 'Faculty deleted successfully' });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
-
-  const course = {
-    id: `c${Date.now()}`,
-    name,
-    code,
-    department,
-    credits: Number(credits),
-    semester: Number(semester),
-    teacher,
-    description,
-  };
-
-  courseStore.push(course);
-  res.status(201).json(course);
 };
 
-const updateCourse = (req, res) => {
-  const index = courseStore.findIndex((entry) => entry.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Course not found' });
-
-  courseStore[index] = { ...courseStore[index], ...req.body };
-  res.json(courseStore[index]);
+const getTimetable = async (req, res) => {
+  try {
+    const timetable = await Timetable.find();
+    res.json(timetable);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
 };
 
-const deleteCourse = (req, res) => {
-  const index = courseStore.findIndex((entry) => entry.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: 'Course not found' });
-
-  courseStore.splice(index, 1);
-  res.json({ message: 'Course deleted successfully' });
+const createTimetableEntry = async (req, res) => {
+  try {
+    if (!req.body.day || !req.body.time || !req.body.subject || !req.body.facultyId || !req.body.room) {
+      return res.status(400).json({ message: 'Required fields missing' });
+    }
+    const entry = await Timetable.create(req.body);
+    res.status(201).json(entry);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
 };
 
-const getReports = (req, res) => {
-  const { department } = req.query;
-  const students = department ? studentStore.filter((s) => s.department === department) : [...studentStore];
+const deleteTimetableEntry = async (req, res) => {
+  try {
+    const entry = await Timetable.findByIdAndDelete(req.params.id);
+    if (!entry) return res.status(404).json({ message: 'Timetable entry not found' });
+    res.json({ message: 'Timetable entry deleted successfully' });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
 
-  const studentReport = students.map((student) => {
-    const attendance = attendanceStore.filter((a) => a.studentId === student.id);
-    const present = attendance.filter((a) => a.status === 'present').length;
-    const total = attendance.length;
-    const fees = feeStore.filter((f) => f.studentId === student.id);
-    const totalFee = fees.reduce((s, f) => s + Number(f.amount), 0);
-    const paidFee = fees.reduce((s, f) => s + Number(f.paid), 0);
-    return {
-      ...student,
-      attendanceRate: total > 0 ? Math.round((present / total) * 100) : 0,
-      totalClasses: total,
-      presentClasses: present,
-      totalFee,
-      paidFee,
-      feeStatus: paidFee >= totalFee ? 'paid' : paidFee > 0 ? 'partial' : 'pending',
-    };
-  });
+const getAttendance = async (req, res) => {
+  try {
+    let query = {};
+    if (req.query.date) query.date = req.query.date;
+    if (req.query.subject) query.subject = req.query.subject;
+    const records = await Attendance.find(query);
+    res.json(records);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
 
-  const attendanceBySubject = SUBJECTS.map((subject) => {
-    const records = attendanceStore.filter((a) => a.subject === subject);
-    const present = records.filter((a) => a.status === 'present').length;
-    const absent = records.filter((a) => a.status === 'absent').length;
-    const late = records.filter((a) => a.status === 'late').length;
-    return {
+const saveAttendance = async (req, res) => {
+  try {
+    const { date, subject, records = [] } = req.body;
+    if (!date || !subject) {
+      return res.status(400).json({ message: 'Date and subject are required' });
+    }
+
+    await Attendance.deleteMany({ date, subject });
+    const nextRecords = records.map((record) => ({ ...record, date, subject }));
+    await Attendance.insertMany(nextRecords);
+
+    res.status(201).json(nextRecords);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const getFees = async (req, res) => {
+  try {
+    const fees = await Fee.find();
+    res.json(fees);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const createFee = async (req, res) => {
+  try {
+    if (!req.body.studentId || !req.body.amount) {
+      return res.status(400).json({ message: 'Student and amount are required' });
+    }
+
+    const amount = Number(req.body.amount);
+    const paid = Number(req.body.paid ?? amount);
+    const fee = await Fee.create({
+      studentId: req.body.studentId,
+      type: req.body.type || 'tuition',
+      amount,
+      paid,
+      dueDate: req.body.dueDate || new Date().toISOString().split('T')[0],
+      paidDate: req.body.paidDate || new Date().toISOString().split('T')[0],
+      status: req.body.status || (paid >= amount ? 'paid' : paid > 0 ? 'partial' : 'pending'),
+      receiptNo: req.body.receiptNo || `REC-${Date.now().toString().slice(-6)}`
+    });
+    res.status(201).json(fee);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const updateFee = async (req, res) => {
+  try {
+    const fee = await Fee.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+    if (!fee) return res.status(404).json({ message: 'Fee record not found' });
+    res.json(fee);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const getExamSchedules = async (req, res) => {
+  try {
+    const schedules = await ExamSchedule.find();
+    res.json(schedules);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const createExamSchedule = async (req, res) => {
+  try {
+    if (!req.body.subject || !req.body.date || !req.body.time || !req.body.room) {
+      return res.status(400).json({ message: 'Required fields missing' });
+    }
+    const entry = await ExamSchedule.create({
+      ...req.body,
+      department: req.body.department || 'Computer Science',
+      semester: Number(req.body.semester) || 4,
+      type: req.body.type || 'midterm'
+    });
+    res.status(201).json(entry);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const createExamResult = async (req, res) => {
+  try {
+    const { studentId, subject, examType, marksObtained, totalMarks } = req.body;
+    if (!studentId || !subject || !examType || marksObtained === undefined || totalMarks === undefined) {
+      return res.status(400).json({ message: 'Required fields missing' });
+    }
+
+    const obtained = Number(marksObtained);
+    const total = Number(totalMarks);
+    const result = await ExamResult.create({
+      studentId,
       subject,
-      total: records.length,
-      present,
-      absent,
-      late,
-      rate: records.length > 0 ? Math.round((present / records.length) * 100) : 0,
-    };
-  });
+      examType,
+      marksObtained: obtained,
+      totalMarks: total,
+      grade: calculateGrade((obtained / total) * 100),
+    });
 
-  const feeByDept = DEPARTMENTS.map((dept) => {
-    const deptStudents = studentStore.filter((s) => s.department === dept).map((s) => s.id);
-    const fees = feeStore.filter((f) => deptStudents.includes(f.studentId));
-    const total = fees.reduce((s, f) => s + Number(f.amount), 0);
-    const collected = fees.reduce((s, f) => s + Number(f.paid), 0);
-    return {
-      department: dept,
-      total,
-      collected,
-      pending: total - collected,
-      rate: total > 0 ? Math.round((collected / total) * 100) : 0,
-    };
-  });
+    res.status(201).json(result);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
 
-  const totalFees = feeStore.reduce((s, f) => s + Number(f.amount), 0);
-  const totalCollected = feeStore.reduce((s, f) => s + Number(f.paid), 0);
+const getExamResults = async (req, res) => {
+  try {
+    const { studentId, subject, examType, department, semester } = req.query;
+    let query = {};
 
-  res.json({
-    studentReport,
-    attendanceBySubject,
-    feeByDept,
-    totals: { totalFees, totalCollected },
-  });
+    if (studentId) query.studentId = studentId;
+    if (subject) query.subject = subject;
+    if (examType) query.examType = examType;
+
+    let results = await ExamResult.find(query);
+
+    if (department || semester) {
+      const studentQuery = {};
+      if (department) studentQuery.department = department;
+      if (semester) studentQuery.semester = Number(semester);
+      const students = await Student.find(studentQuery).select('_id');
+      const studentIds = students.map((s) => s._id);
+      results = results.filter((entry) => studentIds.includes(entry.studentId));
+    }
+
+    res.json(results);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const updateExamResult = async (req, res) => {
+  try {
+    const result = await ExamResult.findById(req.params.id);
+    if (!result) return res.status(404).json({ message: 'Result not found' });
+
+    const merged = { ...result.toObject(), ...req.body };
+    if (req.body.marksObtained !== undefined || req.body.totalMarks !== undefined) {
+      const obtained = Number(merged.marksObtained ?? result.marksObtained);
+      const total = Number(merged.totalMarks ?? result.totalMarks);
+      merged.marksObtained = obtained;
+      merged.totalMarks = total;
+      merged.grade = calculateGrade((obtained / total) * 100);
+    }
+
+    const updated = await ExamResult.findByIdAndUpdate(req.params.id, merged, { new: true });
+    res.json(updated);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const deleteExamResult = async (req, res) => {
+  try {
+    const result = await ExamResult.findByIdAndDelete(req.params.id);
+    if (!result) return res.status(404).json({ message: 'Result not found' });
+    res.json({ message: 'Result deleted successfully' });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const getCourses = async (req, res) => {
+  try {
+    const courses = await Course.find();
+    res.json(courses);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const getCourseById = async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id);
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+    res.json(course);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const createCourse = async (req, res) => {
+  try {
+    const { name, code, department, credits, semester, teacher, description } = req.body;
+    if (!name || !code || !department || !credits || !semester || !teacher || !description) {
+      return res.status(400).json({ message: 'Required fields missing' });
+    }
+    const course = await Course.create({
+      name,
+      code,
+      department,
+      credits: Number(credits),
+      semester: Number(semester),
+      teacher,
+      description,
+    });
+    res.status(201).json(course);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const updateCourse = async (req, res) => {
+  try {
+    const course = await Course.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+    res.json(course);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const deleteCourse = async (req, res) => {
+  try {
+    const course = await Course.findByIdAndDelete(req.params.id);
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+    res.json({ message: 'Course deleted successfully' });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const getReports = async (req, res) => {
+  try {
+    const { department } = req.query;
+    const studentQuery = department ? { department } : {};
+    const students = await Student.find(studentQuery);
+
+    const studentIds = students.map((s) => s._id);
+    const [attendance, fees] = await Promise.all([
+      Attendance.find({ studentId: { $in: studentIds } }),
+      Fee.find({ studentId: { $in: studentIds } }),
+    ]);
+
+    const studentReport = students.map((student) => {
+      const studentAttendance = attendance.filter((a) => a.studentId.toString() === student._id.toString());
+      const present = studentAttendance.filter((a) => a.status === 'present').length;
+      const total = studentAttendance.length;
+      const studentFees = fees.filter((f) => f.studentId.toString() === student._id.toString());
+      const totalFee = studentFees.reduce((s, f) => s + Number(f.amount), 0);
+      const paidFee = studentFees.reduce((s, f) => s + Number(f.paid), 0);
+
+      return {
+        id: student._id,
+        name: student.name,
+        rollNo: student.rollNo,
+        department: student.department,
+        semester: student.semester,
+        email: student.email,
+        phone: student.phone,
+        avatar: student.avatar,
+        admissionDate: student.admissionDate,
+        address: student.address,
+        guardianName: student.guardianName,
+        guardianPhone: student.guardianPhone,
+        status: student.status,
+        enrolledCourses: student.enrolledCourses,
+        attendanceRate: total > 0 ? Math.round((present / total) * 100) : 0,
+        totalClasses: total,
+        presentClasses: present,
+        totalFee,
+        paidFee,
+        feeStatus: paidFee >= totalFee ? 'paid' : paidFee > 0 ? 'partial' : 'pending',
+      };
+    });
+
+    const allAttendance = await Attendance.find();
+    const attendanceBySubject = {};
+    allAttendance.forEach((a) => {
+      if (!attendanceBySubject[a.subject]) {
+        attendanceBySubject[a.subject] = { subject: a.subject, total: 0, present: 0, absent: 0, late: 0 };
+      }
+      attendanceBySubject[a.subject].total += 1;
+      attendanceBySubject[a.subject][a.status] += 1;
+    });
+    const attendanceBySubjectList = Object.values(attendanceBySubject).map((item) => ({
+      ...item,
+      rate: item.total > 0 ? Math.round((item.present / item.total) * 100) : 0,
+    }));
+
+    const allFees = await Fee.find();
+    const feeByDept = {};
+    allFees.forEach((f) => {
+      const student = students.find((s) => s._id.toString() === f.studentId.toString());
+      if (!student) return;
+      const dept = student.department;
+      if (!feeByDept[dept]) {
+        feeByDept[dept] = { department: dept, total: 0, collected: 0, pending: 0 };
+      }
+      feeByDept[dept].total += Number(f.amount);
+      feeByDept[dept].collected += Number(f.paid);
+    });
+    const feeByDeptList = Object.values(feeByDept).map((item) => ({
+      ...item,
+      pending: item.total - item.collected,
+      rate: item.total > 0 ? Math.round((item.collected / item.total) * 100) : 0,
+    }));
+
+    const totalFees = allFees.reduce((s, f) => s + Number(f.amount), 0);
+    const totalCollected = allFees.reduce((s, f) => s + Number(f.paid), 0);
+
+    res.json({
+      studentReport,
+      attendanceBySubject: attendanceBySubjectList,
+      feeByDept: feeByDeptList,
+      totals: { totalFees, totalCollected },
+    });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
 };
 
 module.exports = {
