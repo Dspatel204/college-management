@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { GraduationCap, Eye, EyeOff } from "lucide-react";
+import { GraduationCap, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -24,14 +24,11 @@ function LoginPage() {
     setError("");
     setLoading(true);
 
-    // Simulate network delay
-    await new Promise((r) => setTimeout(r, 500));
-
-    const success = login(email, password);
-    if (success) {
+    const result = await login(email, password);
+    if (result.success) {
       navigate({ to: "/dashboard" });
     } else {
-      setError("Invalid email or password");
+      setError(result.error || "Invalid email or password");
     }
     setLoading(false);
   };
@@ -82,6 +79,7 @@ function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -94,6 +92,7 @@ function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={loading}
                   />
                   <button
                     type="button"
@@ -106,7 +105,14 @@ function LoginPage() {
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in..." : "Sign In"}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </form>
 
@@ -117,13 +123,18 @@ function LoginPage() {
                 {["admin", "teacher", "student"].map((role) => (
                   <button
                     key={role}
+                    type="button"
                     onClick={() => fillDemo(role)}
-                    className="rounded-lg border border-border bg-secondary px-3 py-2 text-xs font-medium text-secondary-foreground capitalize hover:bg-accent transition-colors"
+                    disabled={loading}
+                    className="rounded-lg border border-border bg-secondary px-3 py-2 text-xs font-medium text-secondary-foreground capitalize hover:bg-accent transition-colors disabled:opacity-50"
                   >
                     {role}
                   </button>
                 ))}
               </div>
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                First run: <code className="text-xs">node seed.js</code> in the backend to create accounts
+              </p>
             </div>
           </CardContent>
         </Card>

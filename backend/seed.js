@@ -1,64 +1,56 @@
-const { getMongoConnected, setMongoConnected } = require('./state');
-const { Student, Faculty, Timetable, Attendance, Fee, ExamSchedule, ExamResult, Course } = require('./models');
-const { readJsonFile, writeJsonFile } = require('./data-store');
-const { students, faculty, timetable, attendance, fees, examSchedules, examResults, courses, SUBJECTS, DEPARTMENTS } = require('./models/collegeData');
+/**
+ * Seed script — creates default admin, teacher, and student accounts.
+ * Run once after deploying: node seed.js
+ */
+require('dotenv').config();
+const bcrypt = require('bcryptjs');
+const { syncDatabase, User } = require('./models');
 
-async function seedMongo() {
-  const count = await Student.countDocuments();
-  if (count > 0) {
-    console.log('MongoDB already has data. Skipping seed.');
-    return;
-  }
+const SEED_USERS = [
+  {
+    name: 'Dr. Sharma',
+    email: 'admin@college.com',
+    password: 'admin123',
+    role: 'admin',
+  },
+  {
+    name: 'Prof. Gupta',
+    email: 'teacher@college.com',
+    password: 'teacher123',
+    role: 'teacher',
+  },
+  {
+    name: 'Rahul Kumar',
+    email: 'student@college.com',
+    password: 'student123',
+    role: 'student',
+  },
+];
 
-  console.log('Seeding MongoDB...');
+async function seed() {
+  try {
+    await syncDatabase();
+    console.log('Database synced. Seeding users...');
 
-  await Student.insertMany(students);
-  await Faculty.insertMany(faculty);
-  await Timetable.insertMany(timetable);
-  await Attendance.insertMany(attendance);
-  await Fee.insertMany(fees);
-  await ExamSchedule.insertMany(examSchedules);
-  await ExamResult.insertMany(examResults);
-  await Course.insertMany(courses);
+    for (const u of SEED_USERS) {
+      const existing = await User.findOne({ where: { email: u.email } });
+      if (existing) {
+        console.log(`  ⚠  ${u.email} already exists — skipping`);
+        continue;
+      }
+      const hashed = await bcrypt.hash(u.password, 12);
+      await User.create({ ...u, password: hashed });
+      console.log(`  ✓  Created ${u.role}: ${u.email}`);
+    }
 
-  console.log('MongoDB seeded successfully.');
-}
-
-function seedJson() {
-  const studentStore = readJsonFile('students.json', []);
-  if (studentStore.length > 0) {
-    console.log('JSON store already has data. Skipping seed.');
-    return;
-  }
-
-  console.log('Seeding JSON files...');
-
-  writeJsonFile('students.json', students);
-  writeJsonFile('faculty.json', faculty);
-  writeJsonFile('timetable.json', timetable);
-  writeJsonFile('attendance.json', attendance);
-  writeJsonFile('fees.json', fees);
-  writeJsonFile('examSchedules.json', examSchedules);
-  writeJsonFile('examResults.json', examResults);
-  writeJsonFile('courses.json', courses);
-
-  console.log('JSON files seeded successfully.');
-}
-
-async function main() {
-  if (getMongoConnected()) {
-    await seedMongo();
-  } else {
-    seedJson();
-  }
-}
-
-main()
-  .then(() => {
-    console.log('Seeding complete.');
+    console.log('\nSeed complete!');
+    console.log('Demo credentials:');
+    SEED_USERS.forEach((u) => console.log(`  ${u.role}: ${u.email} / ${u.password}`));
     process.exit(0);
-  })
-  .catch((err) => {
-    console.error('Seeding failed:', err);
+  } catch (err) {
+    console.error('Seed failed:', err.message);
     process.exit(1);
-  });
+  }
+}
+
+seed();

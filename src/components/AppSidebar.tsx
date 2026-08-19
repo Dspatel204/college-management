@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-provider";
+import { canAccessRoute } from "@/lib/permissions";
 import {
   LayoutDashboard, Users, ClipboardCheck, BookOpen, Settings, LogOut,
   GraduationCap, IndianRupee, FileText, BarChart3, UserCog,
@@ -58,7 +59,7 @@ export function AppSidebar({ open, onClose }: { open?: boolean; onClose?: () => 
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 sm:px-3 py-3 sm:py-4">
-        {navItems.map((item) => {
+        {navItems.filter((item) => canAccessRoute(user?.role, item.to)).map((item) => {
           const isActive = location.pathname === item.to;
           return (
             <Link

@@ -1,7 +1,9 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { AuthProvider } from "@/lib/auth-context";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AIChatBubble } from "@/components/AIChatBubble";
+import { Loader2 } from "lucide-react";
+
 
 import appCss from "../styles.css?url";
 
@@ -48,6 +50,8 @@ export const Route = createRootRoute({
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" },
+      // Razorpay payment SDK
+      { rel: "preload", href: "https://checkout.razorpay.com/v1/checkout.js", as: "script" },
     ],
   }),
   shellComponent: RootShell,
@@ -73,9 +77,25 @@ function RootComponent() {
   return (
     <ThemeProvider defaultTheme="light">
       <AuthProvider>
-        <Outlet />
-        <AIChatBubble />
+        <AppContent />
       </AuthProvider>
     </ThemeProvider>
+  );
+}
+
+function AppContent() {
+  const { isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  return (
+    <>
+      <Outlet />
+      <AIChatBubble />
+    </>
   );
 }

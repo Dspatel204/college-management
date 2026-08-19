@@ -1,52 +1,83 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import axios from "axios";
 
-interface User {
+const API_BASE = "https://college-management-n6be.onrender.com/api";
+
+export interface User {
   id: string;
   name: string;
   email: string;
   role: "admin" | "teacher" | "student";
+  avatar?: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const DEMO_USERS: Record<string, { password: string; user: User }> = {
-  "admin@college.com": {
-    password: "admin123",
-    user: { id: "1", name: "Dr. Sharma", email: "admin@college.com", role: "admin" },
-  },
-  "teacher@college.com": {
-    password: "teacher123",
-    user: { id: "2", name: "Prof. Gupta", email: "teacher@college.com", role: "teacher" },
-  },
-  "student@college.com": {
-    password: "student123",
-    user: { id: "3", name: "Rahul Kumar", email: "student@college.com", role: "student" },
-  },
-};
+const TOKEN_KEY = "college_token";
+const USER_KEY = "college_user";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = (email: string, password: string): boolean => {
-    const entry = DEMO_USERS[email];
-    if (entry && entry.password === password) {
-      setUser(entry.user);
-      return true;
+  // Restore session from localStorage on app load
+  useEffect(() => {
+    const storedToken = localStorage.getItem(TOKEN_KEY);
+    const storedUser = localStorage.getItem(USER_KEY);
+    if (storedToken && storedUser) {
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } catch {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+      }
     }
-    return false;
+    setIsLoading(false);
+  }, []);
+
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data } = await axios.post(`${API_BASE}/auth/login`, { email, password });
+      const { token: jwt, user: authUser } = data;
+
+      setToken(jwt);
+      setUser(authUser);
+      localStorage.setItem(TOKEN_KEY, jwt);
+      localStorage.setItem(USER_KEY, JSON.stringify(authUser));
+
+      return { success: true };
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message || err.message || "Login failed";
+      return { success: false, error: message };
+    }
   };
 
-  const logout = () => setUser(null);
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, isAuthenticated: !!user, isLoading, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

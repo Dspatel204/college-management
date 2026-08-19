@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type AxiosResponse } from "axios";
 
 const API_BASE = "https://college-management-n6be.onrender.com/api";
+const TOKEN_KEY = "college_token";
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -9,9 +10,28 @@ const api = axios.create({
   },
 });
 
+// ─── Request interceptor: attach JWT Bearer token ────────────────────────────
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token && config.headers) {
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ─── Response interceptor: error handling + 401 auto-logout ─────────────────
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
+    // Auto logout if token is expired / invalid
+    if (error.response?.status === 401) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem("college_user");
+      // Redirect to login without hard page reload when possible
+      if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
+      }
+    }
     const message =
       (error.response?.data as { message?: string } | undefined)?.message ||
       error.message ||
@@ -19,6 +39,48 @@ api.interceptors.response.use(
     return Promise.reject(new Error(message));
   }
 );
+
+// ─── Auth API calls ──────────────────────────────────────────────────────────
+export async function loginUser(email: string, password: string) {
+  const { data } = await api.post("/auth/login", { email, password });
+  return data;
+}
+
+export async function registerUser(payload: { name: string; email: string; password: string; role?: string }) {
+  const { data } = await api.post("/auth/register", payload);
+  return data;
+}
+
+export async function getMe() {
+  const { data } = await api.get("/auth/me");
+  return data;
+}
+
+// ─── Upload API ──────────────────────────────────────────────────────────────
+export async function uploadAvatar(file: File): Promise<{ url: string; publicId: string }> {
+  const form = new FormData();
+  form.append("avatar", file);
+  const { data } = await api.post("/upload/avatar", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+// ─── Payment API ─────────────────────────────────────────────────────────────
+export async function createPaymentOrder(feeId: string) {
+  const { data } = await api.post("/payments/create-order", { feeId });
+  return data;
+}
+
+export async function verifyPayment(payload: {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+  feeId: string;
+}) {
+  const { data } = await api.post("/payments/verify", payload);
+  return data;
+}
 
 export async function getStudents() {
   const { data } = await api.get("/students");

@@ -9,10 +9,19 @@
     "seed": "node seed.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.2",
     "dotenv": "^16.4.1",
     "express": "^4.21.0",
-    "mongoose": "^8.10.0"
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.10.0",
+    "multer": "^2.2.0",
+    "multer-storage-cloudinary": "^4.0.0",
+    "pg": "^8.23.0",
+    "razorpay": "^2.9.8",
+    "sequelize": "^6.37.8"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
