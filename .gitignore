@@ -33,3 +33,6 @@ dist-ssr
 
 # Backend runtime data
 backend/data/
+
+# Backend env secrets
+backend/.env
