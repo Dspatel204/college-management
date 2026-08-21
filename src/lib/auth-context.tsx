@@ -1,7 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import axios from "axios";
-
-const API_BASE = import.meta.env.VITE_API_URL || "https://college-management-n6be.onrender.com/api";
+import { loginUser } from "@/lib/api";
 
 export interface User {
   id: string;
@@ -51,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data } = await axios.post(`${API_BASE}/auth/login`, { email, password });
+      const data = await loginUser(email, password);
       const { token: jwt, user: authUser } = data;
 
       setToken(jwt);
@@ -60,9 +58,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(USER_KEY, JSON.stringify(authUser));
 
       return { success: true };
-    } catch (err: any) {
+    } catch (err) {
       const message =
-        err.response?.data?.message || err.message || "Login failed";
+        (err as Error).message || "Login failed";
       return { success: false, error: message };
     }
   };
