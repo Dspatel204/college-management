@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import axios from "axios";
 
-const API_BASE = "https://college-management-n6be.onrender.com/api";
+const API_BASE = import.meta.env.VITE_API_URL || "https://college-management-n6be.onrender.com/api";
 
 export interface User {
   id: string;

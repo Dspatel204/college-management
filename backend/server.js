@@ -10,6 +10,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
+  'http://localhost:8080',
   'https://college-management-n6be.onrender.com',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
