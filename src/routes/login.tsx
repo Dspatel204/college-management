@@ -133,7 +133,7 @@ function LoginPage() {
                 ))}
               </div>
               <p className="mt-2 text-center text-xs text-muted-foreground">
-                First run: <code className="text-xs">node seed.js</code> in the backend to create accounts
+                Demo accounts are created automatically when the API starts
               </p>
             </div>
           </CardContent>

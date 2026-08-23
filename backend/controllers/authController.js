@@ -1,18 +1,35 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
 const { User } = require('../models');
 
-const signToken = (user) =>
-  jwt.sign(
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+
+const signToken = (user) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured on the server');
+  }
+  return jwt.sign(
     { id: user.id, email: user.email, role: user.role, name: user.name },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
+};
 
-// POST /api/auth/register
+const publicUser = (user) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  avatar: user.avatar,
+});
+
 const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const name = String(req.body.name || '').trim();
+    const email = normalizeEmail(req.body.email);
+    const password = req.body.password;
+    const role = req.body.role;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
@@ -32,25 +49,24 @@ const register = async (req, res) => {
     });
 
     const token = signToken(user);
-    res.status(201).json({
-      token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar },
-    });
+    res.status(201).json({ token, user: publicUser(user) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// POST /api/auth/login
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const password = req.body.password;
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({
+      where: { email: { [Op.iLike]: email } },
+    });
     if (!user || !user.isActive) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -61,16 +77,12 @@ const login = async (req, res) => {
     }
 
     const token = signToken(user);
-    res.json({
-      token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar },
-    });
+    res.json({ token, user: publicUser(user) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// GET /api/auth/me  (protected)
 const me = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
@@ -83,7 +95,6 @@ const me = async (req, res) => {
   }
 };
 
-// PUT /api/auth/me  (update own profile)
 const updateMe = async (req, res) => {
   try {
     const { name, avatar } = req.body;
@@ -94,7 +105,7 @@ const updateMe = async (req, res) => {
     if (avatar) user.avatar = avatar;
     await user.save();
 
-    res.json({ id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar });
+    res.json(publicUser(user));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

@@ -32,10 +32,26 @@ api.interceptors.response.use(
         window.location.href = "/login";
       }
     }
-    const message =
-      (error.response?.data as { message?: string } | undefined)?.message ||
+    const data = error.response?.data as { message?: string } | string | undefined;
+    let message =
+      (typeof data === "object" && data?.message) ||
+      (typeof data === "string" && data.replace(/<[^>]+>/g, " ").trim()) ||
       error.message ||
       "Something went wrong";
+
+    const routeMissing =
+      (typeof data === "string" && /Cannot (GET|POST|PUT|PATCH|DELETE)/i.test(data)) ||
+      (typeof data === "object" &&
+        typeof data?.message === "string" &&
+        /Route .+ not found/i.test(data.message));
+
+    if (routeMissing) {
+      message =
+        "API route not found. Redeploy the backend on Render (Root Directory = backend) with DATABASE_URL and JWT_SECRET. Login is POST /api/auth/login.";
+    } else if (!error.response && error.message === "Network Error") {
+      message = "Cannot reach the API. Check VITE_API_URL, CORS, and that the Render service is awake.";
+    }
+
     return Promise.reject(new Error(message));
   }
 );

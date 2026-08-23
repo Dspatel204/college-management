@@ -1,23 +1,28 @@
 const { Sequelize } = require('sequelize');
 
-const validateDatabaseUrl = (url) => {
-  if (!url) {
-    throw new Error('DATABASE_URL is not set. Please configure it in your environment variables.');
-  }
-  if (url.includes('@host:') || url.includes('@localhost:') || url.includes('user:password')) {
-    throw new Error('DATABASE_URL contains placeholder values. Please replace with your actual PostgreSQL connection string.');
-  }
-};
+const databaseUrl = process.env.DATABASE_URL;
 
-validateDatabaseUrl(process.env.DATABASE_URL);
+if (!databaseUrl) {
+  throw new Error(
+    'DATABASE_URL is not set. On Render, add a PostgreSQL database and set DATABASE_URL on this service.'
+  );
+}
 
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
+if (databaseUrl.includes('@host:') || databaseUrl.includes('user:password@')) {
+  throw new Error(
+    'DATABASE_URL still has placeholder values. Replace it with your real PostgreSQL connection string.'
+  );
+}
+
+const useSsl =
+  process.env.NODE_ENV === 'production' ||
+  /render\.com|ssl=true|sslmode=require/i.test(databaseUrl);
+
+const sequelize = new Sequelize(databaseUrl, {
   dialect: 'postgres',
-  dialectOptions: {
-    ssl: process.env.NODE_ENV === 'production'
-      ? { require: true, rejectUnauthorized: false }
-      : false,
-  },
+  dialectOptions: useSsl
+    ? { ssl: { require: true, rejectUnauthorized: false } }
+    : {},
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   pool: {
     max: 10,

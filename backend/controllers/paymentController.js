@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const razorpay = require('../config/razorpay');
+const { getRazorpay } = require('../config/razorpay');
 const { Fee } = require('../models');
 
 // POST /api/payments/create-order
@@ -20,7 +20,7 @@ const createOrder = async (req, res) => {
     const amountDue = parseFloat(fee.amount) - parseFloat(fee.paid || 0);
     const amountInPaise = Math.round(amountDue * 100);
 
-    const order = await razorpay.orders.create({
+    const order = await getRazorpay().orders.create({
       amount: amountInPaise,
       currency: 'INR',
       receipt: `fee_${feeId.substring(0, 8)}_${Date.now()}`,
@@ -43,7 +43,7 @@ const createOrder = async (req, res) => {
     });
   } catch (err) {
     console.error('Razorpay order error:', err);
-    res.status(500).json({ message: err.message });
+    res.status(err.status || 500).json({ message: err.message });
   }
 };
 

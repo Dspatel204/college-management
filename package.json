@@ -8,7 +8,9 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "start": "node backend/server.js",
+    "seed": "node backend/seed.js"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

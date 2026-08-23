@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const data = await loginUser(email, password);
+      const data = await loginUser(email.trim().toLowerCase(), password);
       const { token: jwt, user: authUser } = data;
 
       setToken(jwt);
