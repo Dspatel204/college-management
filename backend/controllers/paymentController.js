@@ -18,6 +18,9 @@ const createOrder = async (req, res) => {
 
     // Amount in paise (Razorpay uses smallest currency unit)
     const amountDue = parseFloat(fee.amount) - parseFloat(fee.paid || 0);
+    if (amountDue <= 0) {
+      return res.status(400).json({ message: 'No pending balance due for this fee' });
+    }
     const amountInPaise = Math.round(amountDue * 100);
 
     const order = await getRazorpay().orders.create({
@@ -42,7 +45,7 @@ const createOrder = async (req, res) => {
       feeId,
     });
   } catch (err) {
-    console.error('Razorpay order error:', err);
+    console.error('Razorpay order error:', err.message);
     res.status(err.status || 500).json({ message: err.message });
   }
 };

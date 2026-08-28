@@ -219,14 +219,15 @@ const saveAttendance = async (req, res) => {
     if (!date || !subject || !Array.isArray(records)) {
       return res.status(400).json({ message: 'date, subject, and records[] are required' });
     }
-    // Upsert attendance for each student safely
+    const validRecords = records.filter((r) => r && r.studentId && r.status);
     const saved = await Promise.all(
-      records.map(async ({ studentId, status }) => {
-        const existing = await Attendance.findOne({ where: { studentId, date, subject } });
+      validRecords.map(async ({ studentId, status }) => {
+        const sid = String(studentId).trim();
+        const existing = await Attendance.findOne({ where: { studentId: sid, date, subject } });
         if (existing) {
           return existing.update({ status });
         }
-        return Attendance.create({ studentId, date, subject, status });
+        return Attendance.create({ studentId: sid, date, subject, status });
       })
     );
     res.json({ message: `Attendance saved for ${saved.length} students`, count: saved.length });
@@ -244,7 +245,7 @@ const getFees = async (req, res) => {
     const { studentId, status } = req.query;
     const where = {};
     if (studentId) where.studentId = studentId;
-    if (status) where.status = status;
+    if (status && status !== 'all') where.status = status;
     const fees = await Fee.findAll({ where, order: [['dueDate', 'ASC']] });
     res.json(fees);
   } catch (e) {
@@ -255,10 +256,18 @@ const getFees = async (req, res) => {
 const createFee = async (req, res) => {
   try {
     const { studentId, type, amount } = req.body;
-    if (!studentId || !type || !amount) {
+    if (!studentId || !type || amount == null || amount === '') {
       return res.status(400).json({ message: 'Required fields: studentId, type, amount' });
     }
-    const fee = await Fee.create({ ...req.body, status: req.body.status || 'pending' });
+    const numAmount = parseFloat(amount) || 0;
+    const numPaid = parseFloat(req.body.paid || 0) || 0;
+    const status = req.body.status || (numPaid >= numAmount && numAmount > 0 ? 'paid' : numPaid > 0 ? 'partial' : 'pending');
+    const fee = await Fee.create({
+      ...req.body,
+      amount: numAmount,
+      paid: numPaid,
+      status,
+    });
     res.status(201).json(fee);
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -269,12 +278,21 @@ const updateFee = async (req, res) => {
   try {
     const fee = await Fee.findByPk(req.params.id);
     if (!fee) return res.status(404).json({ message: 'Fee record not found' });
-    await fee.update(req.body);
+    const updateData = { ...req.body };
+    if (updateData.paid !== undefined || updateData.amount !== undefined) {
+      const p = parseFloat(updateData.paid !== undefined ? updateData.paid : fee.paid) || 0;
+      const a = parseFloat(updateData.amount !== undefined ? updateData.amount : fee.amount) || 0;
+      if (!updateData.status) {
+        updateData.status = p >= a && a > 0 ? 'paid' : p > 0 ? 'partial' : 'pending';
+      }
+    }
+    await fee.update(updateData);
     res.json(fee);
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
 };
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXAM SCHEDULES
@@ -438,7 +456,7 @@ const deleteCourse = async (req, res) => {
 const getReports = async (req, res) => {
   try {
     const { department } = req.query;
-    const studentWhere = department ? { department } : {};
+    const studentWhere = department && department !== 'all' ? { department } : {};
 
     const students = await Student.findAll({ where: studentWhere });
     const allAttendance = await Attendance.findAll();
@@ -448,8 +466,8 @@ const getReports = async (req, res) => {
     const studentReport = students.map((s) => {
       const attRecords = allAttendance.filter((a) => a.studentId === s.id || a.studentId === s.rollNo);
       const feeRecords = allFees.filter((f) => f.studentId === s.id || f.studentId === s.rollNo);
-      const totalFee = feeRecords.reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
-      const paidFee = feeRecords.reduce((sum, f) => sum + parseFloat(f.paid || 0), 0);
+      const totalFee = feeRecords.reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+      const paidFee = feeRecords.reduce((sum, f) => sum + (parseFloat(f.paid) || 0), 0);
       const presentClasses = attRecords.filter((a) => a.status === 'present').length;
       const totalClasses = attRecords.length;
       return {
@@ -466,6 +484,7 @@ const getReports = async (req, res) => {
     // Attendance by subject
     const subjectMap = {};
     allAttendance.forEach((a) => {
+      if (!a.subject) return;
       if (!subjectMap[a.subject]) subjectMap[a.subject] = { subject: a.subject, total: 0, present: 0, absent: 0, late: 0 };
       subjectMap[a.subject].total++;
       if (subjectMap[a.subject][a.status] !== undefined) {
@@ -480,12 +499,13 @@ const getReports = async (req, res) => {
     // Fee by department
     const deptFeeMap = {};
     for (const s of students) {
-      if (!deptFeeMap[s.department]) {
-        deptFeeMap[s.department] = { department: s.department, total: 0, collected: 0 };
+      const deptName = s.department || 'General';
+      if (!deptFeeMap[deptName]) {
+        deptFeeMap[deptName] = { department: deptName, total: 0, collected: 0 };
       }
       const feeRecords = allFees.filter((f) => f.studentId === s.id || f.studentId === s.rollNo);
-      deptFeeMap[s.department].total += feeRecords.reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
-      deptFeeMap[s.department].collected += feeRecords.reduce((sum, f) => sum + parseFloat(f.paid || 0), 0);
+      deptFeeMap[deptName].total += feeRecords.reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+      deptFeeMap[deptName].collected += feeRecords.reduce((sum, f) => sum + (parseFloat(f.paid) || 0), 0);
     }
     const feeByDept = Object.values(deptFeeMap).map((d) => ({
       ...d,
@@ -493,14 +513,15 @@ const getReports = async (req, res) => {
       rate: d.total ? Math.round((d.collected / d.total) * 100) : 0,
     }));
 
-    const totalFees = allFees.reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
-    const totalCollected = allFees.reduce((sum, f) => sum + parseFloat(f.paid || 0), 0);
+    const totalFees = allFees.reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+    const totalCollected = allFees.reduce((sum, f) => sum + (parseFloat(f.paid) || 0), 0);
 
     res.json({ studentReport, attendanceBySubject, feeByDept, totals: { totalFees, totalCollected } });
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
 };
+
 
 module.exports = {
   getStudents, getStudentById, createStudent, updateStudent, deleteStudent,

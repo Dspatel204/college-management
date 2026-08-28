@@ -35,7 +35,7 @@ const isAllowedOrigin = (origin) => {
   return false;
 };
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
     if (isAllowedOrigin(origin)) {
       callback(null, true);
@@ -44,7 +44,12 @@ app.use(cors({
     }
   },
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -55,6 +60,7 @@ app.get('/', (req, res) => {
     version: '2.0.0',
     status: 'online',
     database: 'PostgreSQL',
+    nodeVersion: process.version,
     login: 'POST /api/auth/login',
   });
 });
@@ -71,14 +77,18 @@ app.get('/api', (req, res) => {
   });
 });
 
-app.get('/api/health', (req, res) => {
+const healthHandler = (req, res) => {
   res.json({
     status: 'ok',
     message: 'API is healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+    node: process.version,
   });
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
@@ -98,13 +108,14 @@ app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     return res.status(400).json({ message: 'Invalid JSON body' });
   }
-  console.error(err.stack);
+  console.error('Server error:', err.stack || err.message);
   res.status(err.status || 500).json({ message: err.message || 'Something went wrong' });
 });
 
 const PORT = parseInt(process.env.PORT, 10) || 5000;
 
 if (require.main === module) {
+  console.log(`📌 Starting College Management API [Node: ${process.version}, ENV: ${process.env.NODE_ENV || 'development'}]`);
   if (!process.env.JWT_SECRET) {
     console.warn('⚠️ JWT_SECRET is not set. Login tokens will fail until it is configured.');
   }
@@ -118,8 +129,10 @@ if (require.main === module) {
     })
     .catch((err) => {
       console.error('❌ Failed to start server:', err.message);
+      console.error('👉 Tip: Check your DATABASE_URL environment variable and PostgreSQL connection.');
       process.exit(1);
     });
 }
+
 
 module.exports = { app };

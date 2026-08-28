@@ -14,7 +14,12 @@ const syncDatabase = async (retries = 5, delay = 3000) => {
     try {
       await sequelize.authenticate();
       console.log('✅ PostgreSQL connected successfully');
-      await sequelize.sync({ alter: true }); // alter=true safely updates columns
+      try {
+        await sequelize.sync({ alter: true }); // alter=true safely updates columns
+      } catch (alterErr) {
+        console.warn(`⚠️ Schema alter notice (${alterErr.message}), falling back to standard sync...`);
+        await sequelize.sync();
+      }
       console.log('✅ All database models synced');
       return true;
     } catch (err) {

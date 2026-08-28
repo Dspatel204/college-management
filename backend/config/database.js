@@ -41,19 +41,22 @@ if (process.env.DB_SSL === 'true') {
 
 const sequelize = new Sequelize(databaseUrl || 'postgres://postgres:postgres@localhost:5432/college_db', {
   dialect: 'postgres',
-  dialectOptions: useSsl
-    ? {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false,
-        },
-      }
-    : {},
+  dialectOptions: {
+    connectTimeout: 30000,
+    ...(useSsl
+      ? {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false,
+          },
+        }
+      : {}),
+  },
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   pool: {
     max: parseInt(process.env.DB_POOL_MAX || '10', 10),
     min: 0,
-    acquire: 30000,
+    acquire: 45000,
     idle: 10000,
   },
 });

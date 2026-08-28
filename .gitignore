@@ -35,4 +35,9 @@ dist-ssr
 backend/data/
 
 # Backend env secrets
+.env
+.env.*
+!.env.example
 backend/.env
+backend/.env.*
+!backend/.env.example
