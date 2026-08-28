@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import {
   getFees as fetchFees,
   createFee as apiCreateFee,
-  updateFee as apiUpdateFee,
   getStudents as fetchStudents,
   type FeeRecord,
   type Student,

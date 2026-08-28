@@ -23,7 +23,7 @@ import {
   type TimetableEntry,
   type Student,
 } from "@/lib/api";
-import { DEPARTMENTS, SUBJECTS, DAYS, TIME_SLOTS, getStudentById } from "@/lib/college-data";
+import { DEPARTMENTS, SUBJECTS, DAYS, TIME_SLOTS, getFacultyById } from "@/lib/college-data";
 import { Search, Plus, Pencil, Trash2, Mail, Phone, GraduationCap, Calendar, Clock, UserPlus, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/faculty")({
@@ -308,7 +308,7 @@ function FacultyPage() {
                             {entry ? (
                               <div className="rounded-lg bg-primary/10 p-2 text-xs">
                                 <p className="font-medium text-foreground">{entry.subject}</p>
-                                <p className="text-muted-foreground">{getStudentById(entry.facultyId)?.name}</p>
+                                 <p className="text-muted-foreground">{getFacultyById(entry.facultyId)?.name}</p>
                                 <p className="text-muted-foreground">{entry.room}</p>
                               </div>
                             ) : (

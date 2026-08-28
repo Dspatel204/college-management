@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getReports as fetchReports, getExamResults, type ReportData } from "@/lib/api";
+import { getReports as fetchReports, type ReportData } from "@/lib/api";
 import { DEPARTMENTS } from "@/lib/college-data";
 import { Users, ClipboardCheck, IndianRupee, BarChart3, Loader2 } from "lucide-react";
 

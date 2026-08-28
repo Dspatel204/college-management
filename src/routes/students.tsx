@@ -13,7 +13,6 @@ import {
   createStudent as apiCreateStudent,
   updateStudent as apiUpdateStudent,
   deleteStudent as apiDeleteStudent,
-  getStudentById as fetchStudentById,
   getCourses,
   type Student,
   type Course,

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatsCard } from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getStudents as fetchStudents, getFaculty as fetchFaculty, getAttendance, getFees, getCourses, getReports, type Student, type Faculty, type AttendanceRecord, type FeeRecord } from "@/lib/api";
+import { getStudents as fetchStudents, getFaculty as fetchFaculty, getAttendance, getFees, getCourses, type Student, type Faculty, type AttendanceRecord, type FeeRecord } from "@/lib/api";
 import { DEPARTMENTS, SUBJECTS } from "@/lib/college-data";
 import { Users, ClipboardCheck, BookOpen, TrendingUp, Clock, IndianRupee, FileText, UserCog, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";

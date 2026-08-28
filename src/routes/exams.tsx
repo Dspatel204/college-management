@@ -15,8 +15,6 @@ import {
   createExamSchedule as apiCreateExamSchedule,
   getExamResults as fetchExamResults,
   createExamResult as apiCreateExamResult,
-  updateExamResult as apiUpdateExamResult,
-  deleteExamResult as apiDeleteExamResult,
   getStudents,
   type ExamSchedule,
   type ExamResult,
