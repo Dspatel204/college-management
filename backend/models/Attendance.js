@@ -17,6 +17,12 @@ const Attendance = sequelize.define('Attendance', {
 }, {
   tableName: 'attendance',
   timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['studentId', 'date', 'subject'],
+    },
+  ],
 });
 
 module.exports = Attendance;

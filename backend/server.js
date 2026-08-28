@@ -10,20 +10,28 @@ const { ensureSeedUsers } = require('./lib/ensureSeedUsers');
 
 const app = express();
 
+const customOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((s) => s.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:8080',
   'https://college-management-n6be.onrender.com',
-  process.env.FRONTEND_URL,
-].filter(Boolean);
+  ...customOrigins,
+];
 
 const isAllowedOrigin = (origin) => {
   if (!origin) return true;
-  if (allowedOrigins.includes(origin)) return true;
-  if (/^https:\/\/[\w.-]+\.vercel\.app$/.test(origin)) return true;
-  if (/^https:\/\/[\w.-]+\.onrender\.com$/.test(origin)) return true;
-  if (/^https:\/\/[\w.-]+\.lovable\.app$/.test(origin)) return true;
+  const cleanOrigin = origin.replace(/\/+$/, '');
+  if (allowedOrigins.includes(cleanOrigin)) return true;
+  if (/^https:\/\/[\w.-]+\.vercel\.app$/.test(cleanOrigin)) return true;
+  if (/^https:\/\/[\w.-]+\.onrender\.com$/.test(cleanOrigin)) return true;
+  if (/^https:\/\/[\w.-]+\.lovable\.app$/.test(cleanOrigin)) return true;
+  if (/^https:\/\/[\w.-]+\.netlify\.app$/.test(cleanOrigin)) return true;
+  if (/^http:\/\/localhost(:\d+)?$/.test(cleanOrigin)) return true;
   return false;
 };
 
@@ -45,6 +53,7 @@ app.get('/', (req, res) => {
   res.json({
     message: 'College Management API is running',
     version: '2.0.0',
+    status: 'online',
     database: 'PostgreSQL',
     login: 'POST /api/auth/login',
   });
@@ -63,7 +72,12 @@ app.get('/api', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'API is healthy' });
+  res.json({
+    status: 'ok',
+    message: 'API is healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
 });
 
 app.use('/api/auth', require('./routes/authRoutes'));
@@ -88,22 +102,22 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ message: err.message || 'Something went wrong' });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT, 10) || 5000;
 
 if (require.main === module) {
   if (!process.env.JWT_SECRET) {
-    console.warn('JWT_SECRET is not set. Login tokens will fail until it is configured.');
+    console.warn('⚠️ JWT_SECRET is not set. Login tokens will fail until it is configured.');
   }
 
   syncDatabase()
     .then(() => ensureSeedUsers())
     .then(() => {
-      app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Server running on port ${PORT} (0.0.0.0:${PORT})`);
       });
     })
     .catch((err) => {
-      console.error('Failed to start server:', err.message);
+      console.error('❌ Failed to start server:', err.message);
       process.exit(1);
     });
 }

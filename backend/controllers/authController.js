@@ -29,7 +29,7 @@ const register = async (req, res) => {
     const name = String(req.body.name || '').trim();
     const email = normalizeEmail(req.body.email);
     const password = req.body.password;
-    const role = req.body.role;
+    const role = String(req.body.role || 'student').trim().toLowerCase();
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
@@ -45,7 +45,7 @@ const register = async (req, res) => {
       name,
       email,
       password: hashed,
-      role: role || 'student',
+      role: ['admin', 'teacher', 'student'].includes(role) ? role : 'student',
     });
 
     const token = signToken(user);

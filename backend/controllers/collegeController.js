@@ -24,7 +24,7 @@ const getStudents = async (req, res) => {
     const { department, semester, status, search } = req.query;
     const where = {};
     if (department) where.department = department;
-    if (semester) where.semester = parseInt(semester);
+    if (semester && !isNaN(parseInt(semester, 10))) where.semester = parseInt(semester, 10);
     if (status) where.status = status;
     if (search) {
       where[Op.or] = [
@@ -167,7 +167,7 @@ const getTimetable = async (req, res) => {
     const { department, semester } = req.query;
     const where = {};
     if (department) where.department = department;
-    if (semester) where.semester = parseInt(semester);
+    if (semester && !isNaN(parseInt(semester, 10))) where.semester = parseInt(semester, 10);
     const entries = await Timetable.findAll({ where, order: [['day', 'ASC'], ['time', 'ASC']] });
     res.json(entries);
   } catch (e) {
@@ -219,11 +219,15 @@ const saveAttendance = async (req, res) => {
     if (!date || !subject || !Array.isArray(records)) {
       return res.status(400).json({ message: 'date, subject, and records[] are required' });
     }
-    // Upsert attendance for each student
+    // Upsert attendance for each student safely
     const saved = await Promise.all(
-      records.map(({ studentId, status }) =>
-        Attendance.upsert({ studentId, date, subject, status })
-      )
+      records.map(async ({ studentId, status }) => {
+        const existing = await Attendance.findOne({ where: { studentId, date, subject } });
+        if (existing) {
+          return existing.update({ status });
+        }
+        return Attendance.create({ studentId, date, subject, status });
+      })
     );
     res.json({ message: `Attendance saved for ${saved.length} students`, count: saved.length });
   } catch (e) {
@@ -281,7 +285,7 @@ const getExamSchedules = async (req, res) => {
     const { department, semester, type } = req.query;
     const where = {};
     if (department) where.department = department;
-    if (semester) where.semester = parseInt(semester);
+    if (semester && !isNaN(parseInt(semester, 10))) where.semester = parseInt(semester, 10);
     if (type) where.type = type;
     const exams = await ExamSchedule.findAll({ where, order: [['date', 'ASC']] });
     res.json(exams);
@@ -371,7 +375,7 @@ const getCourses = async (req, res) => {
     const { department, semester } = req.query;
     const where = {};
     if (department) where.department = department;
-    if (semester) where.semester = parseInt(semester);
+    if (semester && !isNaN(parseInt(semester, 10))) where.semester = parseInt(semester, 10);
     const courses = await Course.findAll({ where, order: [['code', 'ASC']] });
     res.json(courses);
   } catch (e) {
@@ -442,8 +446,8 @@ const getReports = async (req, res) => {
 
     // Build student report
     const studentReport = students.map((s) => {
-      const attRecords = allAttendance.filter((a) => a.studentId === s.id);
-      const feeRecords = allFees.filter((f) => f.studentId === s.id);
+      const attRecords = allAttendance.filter((a) => a.studentId === s.id || a.studentId === s.rollNo);
+      const feeRecords = allFees.filter((f) => f.studentId === s.id || f.studentId === s.rollNo);
       const totalFee = feeRecords.reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
       const paidFee = feeRecords.reduce((sum, f) => sum + parseFloat(f.paid || 0), 0);
       const presentClasses = attRecords.filter((a) => a.status === 'present').length;
@@ -464,7 +468,9 @@ const getReports = async (req, res) => {
     allAttendance.forEach((a) => {
       if (!subjectMap[a.subject]) subjectMap[a.subject] = { subject: a.subject, total: 0, present: 0, absent: 0, late: 0 };
       subjectMap[a.subject].total++;
-      subjectMap[a.subject][a.status]++;
+      if (subjectMap[a.subject][a.status] !== undefined) {
+        subjectMap[a.subject][a.status]++;
+      }
     });
     const attendanceBySubject = Object.values(subjectMap).map((s) => ({
       ...s,
@@ -477,7 +483,7 @@ const getReports = async (req, res) => {
       if (!deptFeeMap[s.department]) {
         deptFeeMap[s.department] = { department: s.department, total: 0, collected: 0 };
       }
-      const feeRecords = allFees.filter((f) => f.studentId === s.id);
+      const feeRecords = allFees.filter((f) => f.studentId === s.id || f.studentId === s.rollNo);
       deptFeeMap[s.department].total += feeRecords.reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
       deptFeeMap[s.department].collected += feeRecords.reduce((sum, f) => sum + parseFloat(f.paid || 0), 0);
     }

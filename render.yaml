@@ -1,3 +1,9 @@
+databases:
+  - name: college-db
+    databaseName: college_db
+    user: college_user
+    plan: free
+
 services:
   - type: web
     name: college-management-api
@@ -5,8 +11,19 @@ services:
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
+    plan: free
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: college-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
       - key: JWT_EXPIRES_IN
         value: 7d
+      - key: FRONTEND_URL
+        sync: false
+

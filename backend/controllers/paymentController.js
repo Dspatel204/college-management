@@ -57,10 +57,15 @@ const verifyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Missing payment verification fields' });
     }
 
+    const secret = process.env.RAZORPAY_KEY_SECRET || '';
+    if (!secret) {
+      return res.status(503).json({ message: 'Razorpay is not configured on the server.' });
+    }
+
     // HMAC-SHA256 signature verification
     const body = `${razorpayOrderId}|${razorpayPaymentId}`;
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .createHmac('sha256', secret)
       .update(body)
       .digest('hex');
 
