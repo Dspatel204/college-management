@@ -13,12 +13,17 @@ import { Route as TransportRouteImport } from './routes/transport'
 import { Route as SubjectsRouteImport } from './routes/subjects'
 import { Route as StudentsRouteImport } from './routes/students'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ScholarshipsRouteImport } from './routes/scholarships'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PlacementRouteImport } from './routes/placement'
 import { Route as NoticesRouteImport } from './routes/notices'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as InternshipsRouteImport } from './routes/internships'
+import { Route as HostelRouteImport } from './routes/hostel'
+import { Route as GrievanceCellRouteImport } from './routes/grievance-cell'
 import { Route as FeesRouteImport } from './routes/fees'
 import { Route as FacultyRouteImport } from './routes/faculty'
 import { Route as ExamsRouteImport } from './routes/exams'
@@ -27,7 +32,10 @@ import { Route as CredentialsRouteImport } from './routes/credentials'
 import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as BroadcastRouteImport } from './routes/broadcast'
 import { Route as AttendanceRouteImport } from './routes/attendance'
+import { Route as AlumniRouteImport } from './routes/alumni'
+import { Route as AiQuizRouteImport } from './routes/ai-quiz'
 import { Route as AiInsightsRouteImport } from './routes/ai-insights'
+import { Route as AccreditationRouteImport } from './routes/accreditation'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TransportRoute = TransportRouteImport.update({
@@ -48,6 +56,11 @@ const StudentsRoute = StudentsRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScholarshipsRoute = ScholarshipsRouteImport.update({
+  id: '/scholarships',
+  path: '/scholarships',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -78,6 +91,26 @@ const LoginRoute = LoginRouteImport.update({
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InternshipsRoute = InternshipsRouteImport.update({
+  id: '/internships',
+  path: '/internships',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HostelRoute = HostelRouteImport.update({
+  id: '/hostel',
+  path: '/hostel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GrievanceCellRoute = GrievanceCellRouteImport.update({
+  id: '/grievance-cell',
+  path: '/grievance-cell',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeesRoute = FeesRouteImport.update({
@@ -120,9 +153,24 @@ const AttendanceRoute = AttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AlumniRoute = AlumniRouteImport.update({
+  id: '/alumni',
+  path: '/alumni',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiQuizRoute = AiQuizRouteImport.update({
+  id: '/ai-quiz',
+  path: '/ai-quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AiInsightsRoute = AiInsightsRouteImport.update({
   id: '/ai-insights',
   path: '/ai-insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccreditationRoute = AccreditationRouteImport.update({
+  id: '/accreditation',
+  path: '/accreditation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -133,7 +181,10 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accreditation': typeof AccreditationRoute
   '/ai-insights': typeof AiInsightsRoute
+  '/ai-quiz': typeof AiQuizRoute
+  '/alumni': typeof AlumniRoute
   '/attendance': typeof AttendanceRoute
   '/broadcast': typeof BroadcastRoute
   '/courses': typeof CoursesRoute
@@ -142,12 +193,17 @@ export interface FileRoutesByFullPath {
   '/exams': typeof ExamsRoute
   '/faculty': typeof FacultyRoute
   '/fees': typeof FeesRoute
+  '/grievance-cell': typeof GrievanceCellRoute
+  '/hostel': typeof HostelRoute
+  '/internships': typeof InternshipsRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/notices': typeof NoticesRoute
   '/placement': typeof PlacementRoute
   '/reports': typeof ReportsRoute
+  '/scholarships': typeof ScholarshipsRoute
   '/settings': typeof SettingsRoute
   '/students': typeof StudentsRoute
   '/subjects': typeof SubjectsRoute
@@ -155,7 +211,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accreditation': typeof AccreditationRoute
   '/ai-insights': typeof AiInsightsRoute
+  '/ai-quiz': typeof AiQuizRoute
+  '/alumni': typeof AlumniRoute
   '/attendance': typeof AttendanceRoute
   '/broadcast': typeof BroadcastRoute
   '/courses': typeof CoursesRoute
@@ -164,12 +223,17 @@ export interface FileRoutesByTo {
   '/exams': typeof ExamsRoute
   '/faculty': typeof FacultyRoute
   '/fees': typeof FeesRoute
+  '/grievance-cell': typeof GrievanceCellRoute
+  '/hostel': typeof HostelRoute
+  '/internships': typeof InternshipsRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/notices': typeof NoticesRoute
   '/placement': typeof PlacementRoute
   '/reports': typeof ReportsRoute
+  '/scholarships': typeof ScholarshipsRoute
   '/settings': typeof SettingsRoute
   '/students': typeof StudentsRoute
   '/subjects': typeof SubjectsRoute
@@ -178,7 +242,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accreditation': typeof AccreditationRoute
   '/ai-insights': typeof AiInsightsRoute
+  '/ai-quiz': typeof AiQuizRoute
+  '/alumni': typeof AlumniRoute
   '/attendance': typeof AttendanceRoute
   '/broadcast': typeof BroadcastRoute
   '/courses': typeof CoursesRoute
@@ -187,12 +254,17 @@ export interface FileRoutesById {
   '/exams': typeof ExamsRoute
   '/faculty': typeof FacultyRoute
   '/fees': typeof FeesRoute
+  '/grievance-cell': typeof GrievanceCellRoute
+  '/hostel': typeof HostelRoute
+  '/internships': typeof InternshipsRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
   '/messages': typeof MessagesRoute
   '/notices': typeof NoticesRoute
   '/placement': typeof PlacementRoute
   '/reports': typeof ReportsRoute
+  '/scholarships': typeof ScholarshipsRoute
   '/settings': typeof SettingsRoute
   '/students': typeof StudentsRoute
   '/subjects': typeof SubjectsRoute
@@ -202,7 +274,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accreditation'
     | '/ai-insights'
+    | '/ai-quiz'
+    | '/alumni'
     | '/attendance'
     | '/broadcast'
     | '/courses'
@@ -211,12 +286,17 @@ export interface FileRouteTypes {
     | '/exams'
     | '/faculty'
     | '/fees'
+    | '/grievance-cell'
+    | '/hostel'
+    | '/internships'
+    | '/leaderboard'
     | '/library'
     | '/login'
     | '/messages'
     | '/notices'
     | '/placement'
     | '/reports'
+    | '/scholarships'
     | '/settings'
     | '/students'
     | '/subjects'
@@ -224,7 +304,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accreditation'
     | '/ai-insights'
+    | '/ai-quiz'
+    | '/alumni'
     | '/attendance'
     | '/broadcast'
     | '/courses'
@@ -233,12 +316,17 @@ export interface FileRouteTypes {
     | '/exams'
     | '/faculty'
     | '/fees'
+    | '/grievance-cell'
+    | '/hostel'
+    | '/internships'
+    | '/leaderboard'
     | '/library'
     | '/login'
     | '/messages'
     | '/notices'
     | '/placement'
     | '/reports'
+    | '/scholarships'
     | '/settings'
     | '/students'
     | '/subjects'
@@ -246,7 +334,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/accreditation'
     | '/ai-insights'
+    | '/ai-quiz'
+    | '/alumni'
     | '/attendance'
     | '/broadcast'
     | '/courses'
@@ -255,12 +346,17 @@ export interface FileRouteTypes {
     | '/exams'
     | '/faculty'
     | '/fees'
+    | '/grievance-cell'
+    | '/hostel'
+    | '/internships'
+    | '/leaderboard'
     | '/library'
     | '/login'
     | '/messages'
     | '/notices'
     | '/placement'
     | '/reports'
+    | '/scholarships'
     | '/settings'
     | '/students'
     | '/subjects'
@@ -269,7 +365,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccreditationRoute: typeof AccreditationRoute
   AiInsightsRoute: typeof AiInsightsRoute
+  AiQuizRoute: typeof AiQuizRoute
+  AlumniRoute: typeof AlumniRoute
   AttendanceRoute: typeof AttendanceRoute
   BroadcastRoute: typeof BroadcastRoute
   CoursesRoute: typeof CoursesRoute
@@ -278,12 +377,17 @@ export interface RootRouteChildren {
   ExamsRoute: typeof ExamsRoute
   FacultyRoute: typeof FacultyRoute
   FeesRoute: typeof FeesRoute
+  GrievanceCellRoute: typeof GrievanceCellRoute
+  HostelRoute: typeof HostelRoute
+  InternshipsRoute: typeof InternshipsRoute
+  LeaderboardRoute: typeof LeaderboardRoute
   LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
   MessagesRoute: typeof MessagesRoute
   NoticesRoute: typeof NoticesRoute
   PlacementRoute: typeof PlacementRoute
   ReportsRoute: typeof ReportsRoute
+  ScholarshipsRoute: typeof ScholarshipsRoute
   SettingsRoute: typeof SettingsRoute
   StudentsRoute: typeof StudentsRoute
   SubjectsRoute: typeof SubjectsRoute
@@ -318,6 +422,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scholarships': {
+      id: '/scholarships'
+      path: '/scholarships'
+      fullPath: '/scholarships'
+      preLoaderRoute: typeof ScholarshipsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -360,6 +471,34 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/internships': {
+      id: '/internships'
+      path: '/internships'
+      fullPath: '/internships'
+      preLoaderRoute: typeof InternshipsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hostel': {
+      id: '/hostel'
+      path: '/hostel'
+      fullPath: '/hostel'
+      preLoaderRoute: typeof HostelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/grievance-cell': {
+      id: '/grievance-cell'
+      path: '/grievance-cell'
+      fullPath: '/grievance-cell'
+      preLoaderRoute: typeof GrievanceCellRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fees': {
@@ -418,11 +557,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AttendanceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/alumni': {
+      id: '/alumni'
+      path: '/alumni'
+      fullPath: '/alumni'
+      preLoaderRoute: typeof AlumniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-quiz': {
+      id: '/ai-quiz'
+      path: '/ai-quiz'
+      fullPath: '/ai-quiz'
+      preLoaderRoute: typeof AiQuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ai-insights': {
       id: '/ai-insights'
       path: '/ai-insights'
       fullPath: '/ai-insights'
       preLoaderRoute: typeof AiInsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accreditation': {
+      id: '/accreditation'
+      path: '/accreditation'
+      fullPath: '/accreditation'
+      preLoaderRoute: typeof AccreditationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -437,7 +597,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccreditationRoute: AccreditationRoute,
   AiInsightsRoute: AiInsightsRoute,
+  AiQuizRoute: AiQuizRoute,
+  AlumniRoute: AlumniRoute,
   AttendanceRoute: AttendanceRoute,
   BroadcastRoute: BroadcastRoute,
   CoursesRoute: CoursesRoute,
@@ -446,12 +609,17 @@ const rootRouteChildren: RootRouteChildren = {
   ExamsRoute: ExamsRoute,
   FacultyRoute: FacultyRoute,
   FeesRoute: FeesRoute,
+  GrievanceCellRoute: GrievanceCellRoute,
+  HostelRoute: HostelRoute,
+  InternshipsRoute: InternshipsRoute,
+  LeaderboardRoute: LeaderboardRoute,
   LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,
   MessagesRoute: MessagesRoute,
   NoticesRoute: NoticesRoute,
   PlacementRoute: PlacementRoute,
   ReportsRoute: ReportsRoute,
+  ScholarshipsRoute: ScholarshipsRoute,
   SettingsRoute: SettingsRoute,
   StudentsRoute: StudentsRoute,
   SubjectsRoute: SubjectsRoute,

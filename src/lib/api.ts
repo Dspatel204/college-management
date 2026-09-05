@@ -16,11 +16,59 @@ import {
   INITIAL_STUDENT_PLACEMENTS,
   INITIAL_APPLICATIONS,
   INITIAL_BROADCAST_ALERTS,
+  INITIAL_LEADERBOARD,
+  INITIAL_BADGES,
+  INITIAL_HOSTEL_ROOMS,
+  INITIAL_OUTING_PASSES,
+  INITIAL_HOSTEL_COMPLAINTS,
+  INITIAL_ALUMNI,
+  INITIAL_MENTORSHIPS,
+  INITIAL_QUIZ_QUESTIONS,
+  INITIAL_NAAC_CRITERIA,
+  INITIAL_SCHOLARSHIP_SCHEMES,
+  INITIAL_SCHOLARSHIP_APPLICATIONS,
+  INITIAL_INTERNSHIPS,
+  INITIAL_STUDENT_INTERNSHIPS,
+  INITIAL_GRIEVANCES,
+  INITIAL_LIBRARY_BOOKS,
+  INITIAL_BOOK_ISSUES,
+  INITIAL_E_RESOURCES,
+  INITIAL_BUS_ROUTES,
+  INITIAL_STUDENT_BUS_PASSES,
+  INITIAL_CLUBS,
+  INITIAL_EVENTS,
+  INITIAL_EVENT_REGISTRATIONS,
+  INITIAL_ATTENDANCE_PUNCHES,
+  INITIAL_FACULTY_LEAVES,
   calculateGrade,
   type PlacementDrive,
   type StudentPlacementProfile,
   type PlacementApplication,
   type BroadcastAlert,
+  type LeaderboardEntry,
+  type BadgeItem,
+  type HostelRoom,
+  type OutingPass,
+  type HostelComplaint,
+  type AlumniProfile,
+  type MentorshipSession,
+  type QuizQuestion,
+  type NaacCriteriaScore,
+  type ScholarshipScheme,
+  type StudentScholarshipApplication,
+  type InternshipOpportunity,
+  type StudentInternshipEnrollment,
+  type GrievanceCase,
+  type LibraryBook,
+  type BookIssueRecord,
+  type EResourceItem,
+  type BusRoute,
+  type StudentBusPass,
+  type StudentClub,
+  type CampusEvent,
+  type EventRegistration,
+  type AttendancePunch,
+  type FacultyLeaveRequest,
 } from "@/lib/college-data";
 
 // ─── Backend Axios Client (Commented for standalone frontend execution) ──────
@@ -60,6 +108,30 @@ const KEYS = {
   STUDENT_PLACEMENTS: "college_student_placements",
   APPLICATIONS: "college_placement_applications",
   BROADCAST_ALERTS: "college_broadcast_alerts",
+  LEADERBOARD: "college_leaderboard_data",
+  BADGES: "college_badges_data",
+  HOSTEL_ROOMS: "college_hostel_rooms",
+  OUTING_PASSES: "college_outing_passes",
+  HOSTEL_COMPLAINTS: "college_hostel_complaints",
+  ALUMNI: "college_alumni_data",
+  MENTORSHIPS: "college_mentorship_sessions",
+  QUIZ_QUESTIONS: "college_quiz_questions",
+  NAAC_CRITERIA: "college_naac_criteria",
+  SCHOLARSHIP_SCHEMES: "college_scholarship_schemes",
+  SCHOLARSHIP_APPLICATIONS: "college_scholarship_applications",
+  INTERNSHIPS: "college_internships_data",
+  STUDENT_INTERNSHIPS: "college_student_internships",
+  GRIEVANCES: "college_grievance_cases",
+  LIBRARY_BOOKS: "college_library_books",
+  BOOK_ISSUES: "college_book_issues",
+  E_RESOURCES: "college_e_resources",
+  BUS_ROUTES: "college_bus_routes",
+  STUDENT_BUS_PASSES: "college_student_bus_passes",
+  CLUBS: "college_student_clubs",
+  EVENTS: "college_campus_events",
+  EVENT_REGISTRATIONS: "college_event_registrations",
+  ATTENDANCE_PUNCHES: "college_attendance_punches",
+  FACULTY_LEAVES: "college_faculty_leaves",
 };
 
 // ─── Storage Helpers ────────────────────────────────────────────────────────
@@ -1374,4 +1446,688 @@ export async function sendBroadcastAlert(alert: Omit<BroadcastAlert, "id" | "cre
   setStore(KEYS.BROADCAST_ALERTS, updated);
   return newAlert;
 }
+
+// ─── 1. Leaderboard & Gamification API ──────────────────────────────────────
+export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  return getStore<LeaderboardEntry>(KEYS.LEADERBOARD, INITIAL_LEADERBOARD);
+}
+
+export async function getBadges(): Promise<BadgeItem[]> {
+  return getStore<BadgeItem>(KEYS.BADGES, INITIAL_BADGES);
+}
+
+export async function awardBadgeToStudent(studentId: string, badgeId: string): Promise<LeaderboardEntry> {
+  const list = getStore<LeaderboardEntry>(KEYS.LEADERBOARD, INITIAL_LEADERBOARD);
+  let updatedEntry: LeaderboardEntry | null = null;
+  const updated = list.map((entry) => {
+    if (entry.studentId === studentId) {
+      const badges = Array.from(new Set([...entry.badges, badgeId]));
+      updatedEntry = { ...entry, badges, totalXp: entry.totalXp + 250 };
+      return updatedEntry;
+    }
+    return entry;
+  });
+  setStore(KEYS.LEADERBOARD, updated);
+  return updatedEntry || list[0];
+}
+
+// ─── 2. Hostel Management API ────────────────────────────────────────────────
+export async function getHostelRooms(): Promise<HostelRoom[]> {
+  return getStore<HostelRoom>(KEYS.HOSTEL_ROOMS, INITIAL_HOSTEL_ROOMS);
+}
+
+export async function updateHostelRoom(id: string, data: Partial<HostelRoom>): Promise<HostelRoom> {
+  const rooms = getStore<HostelRoom>(KEYS.HOSTEL_ROOMS, INITIAL_HOSTEL_ROOMS);
+  let updatedRoom: HostelRoom | null = null;
+  const updated = rooms.map((r) => {
+    if (r.id === id) {
+      updatedRoom = { ...r, ...data };
+      return updatedRoom;
+    }
+    return r;
+  });
+  setStore(KEYS.HOSTEL_ROOMS, updated);
+  return updatedRoom || rooms[0];
+}
+
+export async function getOutingPasses(): Promise<OutingPass[]> {
+  return getStore<OutingPass>(KEYS.OUTING_PASSES, INITIAL_OUTING_PASSES);
+}
+
+export async function createOutingPass(data: Omit<OutingPass, "id" | "status">): Promise<OutingPass> {
+  const passes = getStore<OutingPass>(KEYS.OUTING_PASSES, INITIAL_OUTING_PASSES);
+  const newPass: OutingPass = {
+    ...data,
+    id: "op_" + Date.now(),
+    status: "Pending",
+  };
+  const updated = [newPass, ...passes];
+  setStore(KEYS.OUTING_PASSES, updated);
+  return newPass;
+}
+
+export async function updateOutingPassStatus(id: string, status: OutingPass["status"], approvedBy?: string): Promise<OutingPass> {
+  const passes = getStore<OutingPass>(KEYS.OUTING_PASSES, INITIAL_OUTING_PASSES);
+  let updatedPass: OutingPass | null = null;
+  const updated = passes.map((p) => {
+    if (p.id === id) {
+      updatedPass = {
+        ...p,
+        status,
+        approvedBy: approvedBy || p.approvedBy || "Warden Admin",
+        actualReturn: status === "Returned" ? new Date().toLocaleString() : p.actualReturn,
+      };
+      return updatedPass;
+    }
+    return p;
+  });
+  setStore(KEYS.OUTING_PASSES, updated);
+  return updatedPass || passes[0];
+}
+
+export async function getHostelComplaints(): Promise<HostelComplaint[]> {
+  return getStore<HostelComplaint>(KEYS.HOSTEL_COMPLAINTS, INITIAL_HOSTEL_COMPLAINTS);
+}
+
+export async function createHostelComplaint(data: Omit<HostelComplaint, "id" | "createdAt" | "status">): Promise<HostelComplaint> {
+  const complaints = getStore<HostelComplaint>(KEYS.HOSTEL_COMPLAINTS, INITIAL_HOSTEL_COMPLAINTS);
+  const newComplaint: HostelComplaint = {
+    ...data,
+    id: "hc_" + Date.now(),
+    status: "Open",
+    createdAt: new Date().toISOString().split("T")[0],
+  };
+  const updated = [newComplaint, ...complaints];
+  setStore(KEYS.HOSTEL_COMPLAINTS, updated);
+  return newComplaint;
+}
+
+// ─── 3. Alumni Network & Mentorship API ──────────────────────────────────────
+export async function getAlumniList(): Promise<AlumniProfile[]> {
+  return getStore<AlumniProfile>(KEYS.ALUMNI, INITIAL_ALUMNI);
+}
+
+export async function getMentorshipSessions(): Promise<MentorshipSession[]> {
+  return getStore<MentorshipSession>(KEYS.MENTORSHIPS, INITIAL_MENTORSHIPS);
+}
+
+export async function bookMentorshipSession(data: { alumniId: string; studentId: string; topic: string; preferredDate: string }): Promise<MentorshipSession> {
+  const sessions = getStore<MentorshipSession>(KEYS.MENTORSHIPS, INITIAL_MENTORSHIPS);
+  const newSession: MentorshipSession = {
+    id: "ms_" + Date.now(),
+    alumniId: data.alumniId,
+    studentId: data.studentId,
+    topic: data.topic,
+    sessionDate: data.preferredDate || new Date().toISOString().split("T")[0] + " 18:00",
+    meetingLink: `meet.google.com/chub-${Math.random().toString(36).substring(2, 6)}`,
+    status: "Confirmed",
+  };
+  const updated = [newSession, ...sessions];
+  setStore(KEYS.MENTORSHIPS, updated);
+  return newSession;
+}
+
+// ─── 4. AI Question Paper & Quiz API ─────────────────────────────────────────
+export async function getQuizQuestions(subject?: string): Promise<QuizQuestion[]> {
+  const questions = getStore<QuizQuestion>(KEYS.QUIZ_QUESTIONS, INITIAL_QUIZ_QUESTIONS);
+  if (!subject || subject === "All") return questions;
+  return questions.filter((q) => q.subject.toLowerCase() === subject.toLowerCase());
+}
+
+export async function generateAIQuestionPaper(params: {
+  subject: string;
+  semester: number;
+  totalMarks: number;
+  difficulty: "Easy" | "Medium" | "Hard" | "Balanced";
+}): Promise<{
+  paperTitle: string;
+  subject: string;
+  semester: number;
+  totalMarks: number;
+  duration: string;
+  sections: {
+    sectionTitle: string;
+    marksPerQuestion: number;
+    instructions: string;
+    questions: string[];
+  }[];
+}> {
+  const subjectName = params.subject || "Data Structures";
+  return {
+    paperTitle: `Semester End Examination — ${subjectName}`,
+    subject: subjectName,
+    semester: params.semester || 4,
+    totalMarks: params.totalMarks || 100,
+    duration: "3 Hours",
+    sections: [
+      {
+        sectionTitle: "Section A: Conceptual & Objective (Short Answer)",
+        marksPerQuestion: 2,
+        instructions: "Answer all 10 questions. (10 x 2 = 20 Marks)",
+        questions: [
+          `Define the core mathematical foundation and time complexity bounds of ${subjectName}.`,
+          "State the essential conditions necessary to prevent deadlocks / race conditions.",
+          "Differentiate between Static Memory Allocation and Dynamic Heap Storage.",
+          "Explain the primary objective of BCNF in database normalization.",
+          "What is the significance of the 3-Way Handshake in Transmission Control Protocol (TCP)?",
+        ],
+      },
+      {
+        sectionTitle: "Section B: Analytical & Algorithmic Problem Solving",
+        marksPerQuestion: 8,
+        instructions: "Answer any 5 questions with diagrams and proof. (5 x 8 = 40 Marks)",
+        questions: [
+          `Construct an optimal algorithmic proof for solving standard benchmark problems in ${subjectName}.`,
+          "Explain Dijkstra's shortest path algorithm with a detailed step-by-step trace graph.",
+          "Analyze the worst-case and average-case performance comparison between QuickSort and MergeSort.",
+          "Describe ACID properties with real-world concurrent transaction scenarios.",
+        ],
+      },
+      {
+        sectionTitle: "Section C: Advanced Design & Case Study Applications",
+        marksPerQuestion: 20,
+        instructions: "Answer any 2 comprehensive design questions. (2 x 20 = 40 Marks)",
+        questions: [
+          `Architect an end-to-end fault-tolerant distributed system applying principles of ${subjectName}.`,
+          "Design a scalable relational database schema with indexing and partitioning strategies for a million active users.",
+        ],
+      },
+    ],
+  };
+}
+
+// ─── 5. NAAC & NIRF Accreditation API ───────────────────────────────────────
+export async function getNaacCriteria(): Promise<NaacCriteriaScore[]> {
+  return getStore<NaacCriteriaScore>(KEYS.NAAC_CRITERIA, INITIAL_NAAC_CRITERIA);
+}
+
+export async function updateNaacCriteriaScore(criteriaNumber: number, scoreObtained: number): Promise<NaacCriteriaScore> {
+  const list = getStore<NaacCriteriaScore>(KEYS.NAAC_CRITERIA, INITIAL_NAAC_CRITERIA);
+  let updatedItem: NaacCriteriaScore | null = null;
+  const updated = list.map((item) => {
+    if (item.criteriaNumber === criteriaNumber) {
+      const percentage = (scoreObtained / item.weightage) * 100;
+      let grade: NaacCriteriaScore["grade"] = "A";
+      if (percentage >= 90) grade = "A++";
+      else if (percentage >= 80) grade = "A+";
+      else if (percentage >= 70) grade = "A";
+      else if (percentage >= 60) grade = "B++";
+      else if (percentage >= 55) grade = "B+";
+      else grade = "B";
+
+      updatedItem = { ...item, scoreObtained, grade };
+      return updatedItem;
+    }
+    return item;
+  });
+  setStore(KEYS.NAAC_CRITERIA, updated);
+  return updatedItem || list[0];
+}
+
+// ─── 6. Govt Scholarship & Fee Waiver API ───────────────────────────────────
+export async function getScholarshipSchemes(): Promise<ScholarshipScheme[]> {
+  return getStore<ScholarshipScheme>(KEYS.SCHOLARSHIP_SCHEMES, INITIAL_SCHOLARSHIP_SCHEMES);
+}
+
+export async function getScholarshipApplications(): Promise<StudentScholarshipApplication[]> {
+  return getStore<StudentScholarshipApplication>(KEYS.SCHOLARSHIP_APPLICATIONS, INITIAL_SCHOLARSHIP_APPLICATIONS);
+}
+
+export async function submitScholarshipApplication(data: {
+  schemeId: string;
+  studentId: string;
+  annualFamilyIncome: number;
+  categoryClaimed: string;
+  sanctionedAmount?: number;
+}): Promise<StudentScholarshipApplication> {
+  const apps = getStore<StudentScholarshipApplication>(KEYS.SCHOLARSHIP_APPLICATIONS, INITIAL_SCHOLARSHIP_APPLICATIONS);
+  const newApp: StudentScholarshipApplication = {
+    id: "sa_" + Date.now(),
+    schemeId: data.schemeId,
+    studentId: data.studentId,
+    appliedDate: new Date().toISOString().split("T")[0],
+    annualFamilyIncome: data.annualFamilyIncome,
+    categoryClaimed: data.categoryClaimed,
+    verifiedDocuments: [
+      { docName: "Income Certificate (Tehsildar / Sub-Divisional Magistrate)", verified: true },
+      { docName: "Aadhaar Linked DBT Bank Passbook", verified: true },
+      { docName: "Previous Semester Grade Card", verified: true },
+    ],
+    sanctionedAmount: data.sanctionedAmount || 50000,
+    status: "College Verified",
+  };
+  const updated = [newApp, ...apps];
+  setStore(KEYS.SCHOLARSHIP_APPLICATIONS, updated);
+  return newApp;
+}
+
+export async function updateScholarshipStatus(id: string, status: StudentScholarshipApplication["status"]): Promise<StudentScholarshipApplication> {
+  const apps = getStore<StudentScholarshipApplication>(KEYS.SCHOLARSHIP_APPLICATIONS, INITIAL_SCHOLARSHIP_APPLICATIONS);
+  let updatedApp: StudentScholarshipApplication | null = null;
+  const updated = apps.map((a) => {
+    if (a.id === id) {
+      updatedApp = { ...a, status };
+      return updatedApp;
+    }
+    return a;
+  });
+  setStore(KEYS.SCHOLARSHIP_APPLICATIONS, updated);
+  return updatedApp || apps[0];
+}
+
+// ─── 7. NEP 2020 Mandatory Industrial Internship API ────────────────────────
+export async function getInternshipOpportunities(): Promise<InternshipOpportunity[]> {
+  return getStore<InternshipOpportunity>(KEYS.INTERNSHIPS, INITIAL_INTERNSHIPS);
+}
+
+export async function getStudentInternships(): Promise<StudentInternshipEnrollment[]> {
+  return getStore<StudentInternshipEnrollment>(KEYS.STUDENT_INTERNSHIPS, INITIAL_STUDENT_INTERNSHIPS);
+}
+
+export async function enrollStudentInternship(data: {
+  studentId: string;
+  internshipId?: string;
+  organizationName: string;
+  role: string;
+  startDate: string;
+  endDate: string;
+}): Promise<StudentInternshipEnrollment> {
+  const enrollments = getStore<StudentInternshipEnrollment>(KEYS.STUDENT_INTERNSHIPS, INITIAL_STUDENT_INTERNSHIPS);
+  const newEnrollment: StudentInternshipEnrollment = {
+    id: "si_" + Date.now(),
+    internshipId: data.internshipId,
+    studentId: data.studentId,
+    organizationName: data.organizationName,
+    role: data.role,
+    startDate: data.startDate,
+    endDate: data.endDate,
+    nocIssued: true,
+    nocReferenceNo: `CHUB/NOC/2024/${Math.floor(100 + Math.random() * 900)}`,
+    weeklyLogbookCompleted: 0,
+    creditsAwarded: 0,
+    status: "NOC Issued",
+  };
+  const updated = [newEnrollment, ...enrollments];
+  setStore(KEYS.STUDENT_INTERNSHIPS, updated);
+  return newEnrollment;
+}
+
+export async function updateInternshipProgress(id: string, logbookWeeks: number, credits: number, status: StudentInternshipEnrollment["status"]): Promise<StudentInternshipEnrollment> {
+  const enrollments = getStore<StudentInternshipEnrollment>(KEYS.STUDENT_INTERNSHIPS, INITIAL_STUDENT_INTERNSHIPS);
+  let updatedItem: StudentInternshipEnrollment | null = null;
+  const updated = enrollments.map((item) => {
+    if (item.id === id) {
+      updatedItem = {
+        ...item,
+        weeklyLogbookCompleted: logbookWeeks,
+        creditsAwarded: credits,
+        status,
+      };
+      return updatedItem;
+    }
+    return item;
+  });
+  setStore(KEYS.STUDENT_INTERNSHIPS, updated);
+  return updatedItem || enrollments[0];
+}
+
+// ─── 8. UGC Mandatory Anti-Ragging & Grievance Cell API ─────────────────────
+export async function getGrievanceCases(): Promise<GrievanceCase[]> {
+  return getStore<GrievanceCase>(KEYS.GRIEVANCES, INITIAL_GRIEVANCES);
+}
+
+export async function submitGrievanceCase(data: {
+  category: GrievanceCase["category"];
+  submittedBy?: string;
+  studentId?: string;
+  incidentDate: string;
+  location: string;
+  description: string;
+  confidentialityLevel: GrievanceCase["confidentialityLevel"];
+}): Promise<GrievanceCase> {
+  const cases = getStore<GrievanceCase>(KEYS.GRIEVANCES, INITIAL_GRIEVANCES);
+  const prefix = data.category.includes("Ragging") ? "AR" : data.category.includes("ICC") ? "ICC" : "SGRC";
+  const committeeAssigned = data.category.includes("Ragging")
+    ? "Anti-Ragging Squad"
+    : data.category.includes("ICC")
+    ? "Internal Complaints Committee (ICC)"
+    : "Student Grievance Redressal (SGRC)";
+
+  const newCase: GrievanceCase = {
+    id: "gr_" + Date.now(),
+    ticketNo: `${prefix}-2024-${Math.floor(100 + Math.random() * 900)}`,
+    category: data.category,
+    submittedBy: data.submittedBy || "Anonymous / Confidential",
+    studentId: data.studentId,
+    incidentDate: data.incidentDate,
+    location: data.location,
+    description: data.description,
+    confidentialityLevel: data.confidentialityLevel || "Strictly Confidential",
+    committeeAssigned,
+    status: "Reported",
+  };
+  const updated = [newCase, ...cases];
+  setStore(KEYS.GRIEVANCES, updated);
+  return newCase;
+}
+
+export async function updateGrievanceStatus(id: string, status: GrievanceCase["status"], actionNotes: string): Promise<GrievanceCase> {
+  const cases = getStore<GrievanceCase>(KEYS.GRIEVANCES, INITIAL_GRIEVANCES);
+  let updatedCase: GrievanceCase | null = null;
+  const updated = cases.map((c) => {
+    if (c.id === id) {
+      updatedCase = { ...c, status, actionTakenNotes: actionNotes };
+      return updatedCase;
+    }
+    return c;
+  });
+  setStore(KEYS.GRIEVANCES, updated);
+  return updatedCase || cases[0];
+}
+
+// ─── 9. Smart Digital Library & E-Resources API ─────────────────────────────
+export async function getLibraryBooks(): Promise<LibraryBook[]> {
+  return getStore<LibraryBook>(KEYS.LIBRARY_BOOKS, INITIAL_LIBRARY_BOOKS);
+}
+
+export async function createLibraryBook(data: Omit<LibraryBook, "id">): Promise<LibraryBook> {
+  const books = getStore<LibraryBook>(KEYS.LIBRARY_BOOKS, INITIAL_LIBRARY_BOOKS);
+  const newBook: LibraryBook = {
+    ...data,
+    id: "lb_" + Date.now(),
+  };
+  const updated = [newBook, ...books];
+  setStore(KEYS.LIBRARY_BOOKS, updated);
+  return newBook;
+}
+
+export async function getBookIssues(): Promise<BookIssueRecord[]> {
+  return getStore<BookIssueRecord>(KEYS.BOOK_ISSUES, INITIAL_BOOK_ISSUES);
+}
+
+export async function issueBook(data: { bookId: string; studentId: string; days?: number }): Promise<BookIssueRecord> {
+  const issues = getStore<BookIssueRecord>(KEYS.BOOK_ISSUES, INITIAL_BOOK_ISSUES);
+  const books = getStore<LibraryBook>(KEYS.LIBRARY_BOOKS, INITIAL_LIBRARY_BOOKS);
+
+  const issueDate = new Date();
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + (data.days || 14));
+
+  const newIssue: BookIssueRecord = {
+    id: "bi_" + Date.now(),
+    bookId: data.bookId,
+    studentId: data.studentId,
+    issueDate: issueDate.toISOString().split("T")[0],
+    dueDate: dueDate.toISOString().split("T")[0],
+    status: "Issued",
+    overdueFine: 0,
+  };
+
+  setStore(KEYS.BOOK_ISSUES, [newIssue, ...issues]);
+
+  // Decrement available copies
+  const updatedBooks = books.map((b) =>
+    b.id === data.bookId ? { ...b, availableCopies: Math.max(0, b.availableCopies - 1) } : b
+  );
+  setStore(KEYS.LIBRARY_BOOKS, updatedBooks);
+
+  return newIssue;
+}
+
+export async function returnBook(issueId: string): Promise<BookIssueRecord> {
+  const issues = getStore<BookIssueRecord>(KEYS.BOOK_ISSUES, INITIAL_BOOK_ISSUES);
+  const books = getStore<LibraryBook>(KEYS.LIBRARY_BOOKS, INITIAL_LIBRARY_BOOKS);
+  let updatedRecord: BookIssueRecord | null = null;
+
+  const updatedIssues = issues.map((rec) => {
+    if (rec.id === issueId) {
+      updatedRecord = {
+        ...rec,
+        status: "Returned",
+        returnDate: new Date().toISOString().split("T")[0],
+      };
+      return updatedRecord;
+    }
+    return rec;
+  });
+
+  setStore(KEYS.BOOK_ISSUES, updatedIssues);
+
+  if (updatedRecord) {
+    const bookId = (updatedRecord as BookIssueRecord).bookId;
+    const updatedBooks = books.map((b) =>
+      b.id === bookId ? { ...b, availableCopies: Math.min(b.totalCopies, b.availableCopies + 1) } : b
+    );
+    setStore(KEYS.LIBRARY_BOOKS, updatedBooks);
+  }
+
+  return updatedRecord || issues[0];
+}
+
+export async function renewBook(issueId: string): Promise<BookIssueRecord> {
+  const issues = getStore<BookIssueRecord>(KEYS.BOOK_ISSUES, INITIAL_BOOK_ISSUES);
+  let updatedRecord: BookIssueRecord | null = null;
+
+  const updatedIssues = issues.map((rec) => {
+    if (rec.id === issueId) {
+      const newDue = new Date();
+      newDue.setDate(newDue.getDate() + 14);
+      updatedRecord = {
+        ...rec,
+        status: "Renewed",
+        dueDate: newDue.toISOString().split("T")[0],
+        overdueFine: 0,
+      };
+      return updatedRecord;
+    }
+    return rec;
+  });
+
+  setStore(KEYS.BOOK_ISSUES, updatedIssues);
+  return updatedRecord || issues[0];
+}
+
+export async function getEResources(): Promise<EResourceItem[]> {
+  return getStore<EResourceItem>(KEYS.E_RESOURCES, INITIAL_E_RESOURCES);
+}
+
+// ─── 10. Campus Transport & GPS Bus Tracking API ────────────────────────────
+export async function getBusRoutes(): Promise<BusRoute[]> {
+  return getStore<BusRoute>(KEYS.BUS_ROUTES, INITIAL_BUS_ROUTES);
+}
+
+export async function updateBusRoute(id: string, data: Partial<BusRoute>): Promise<BusRoute> {
+  const routes = getStore<BusRoute>(KEYS.BUS_ROUTES, INITIAL_BUS_ROUTES);
+  let updatedRoute: BusRoute | null = null;
+  const updated = routes.map((r) => {
+    if (r.id === id) {
+      updatedRoute = { ...r, ...data };
+      return updatedRoute;
+    }
+    return r;
+  });
+  setStore(KEYS.BUS_ROUTES, updated);
+  return updatedRoute || routes[0];
+}
+
+export async function getStudentBusPasses(): Promise<StudentBusPass[]> {
+  return getStore<StudentBusPass>(KEYS.STUDENT_BUS_PASSES, INITIAL_STUDENT_BUS_PASSES);
+}
+
+export async function createStudentBusPass(data: {
+  studentId: string;
+  routeId: string;
+  pickupStop: string;
+  amountPaid: number;
+}): Promise<StudentBusPass> {
+  const passes = getStore<StudentBusPass>(KEYS.STUDENT_BUS_PASSES, INITIAL_STUDENT_BUS_PASSES);
+  const routes = getStore<BusRoute>(KEYS.BUS_ROUTES, INITIAL_BUS_ROUTES);
+
+  const matchedRoute = routes.find((r) => r.id === data.routeId);
+  const routeNum = matchedRoute ? matchedRoute.routeNumber.replace(/\s+/g, "") : "R01";
+
+  const newPass: StudentBusPass = {
+    id: "bp_" + Date.now(),
+    studentId: data.studentId,
+    routeId: data.routeId,
+    pickupStop: data.pickupStop,
+    passNumber: `PASS-2024-${routeNum}-${Math.floor(100 + Math.random() * 900)}`,
+    validUpto: "2024-12-31",
+    feeStatus: "Paid",
+    amountPaid: data.amountPaid,
+    qrToken: `QR-BUS-${routeNum}-${data.studentId.toUpperCase()}-VERIFIED`,
+  };
+
+  const updated = [newPass, ...passes];
+  setStore(KEYS.STUDENT_BUS_PASSES, updated);
+  return newPass;
+}
+
+// ─── 11. Campus Life, Clubs & Tech-Fest API ─────────────────────────────────
+export async function getStudentClubs(): Promise<StudentClub[]> {
+  return getStore<StudentClub>(KEYS.CLUBS, INITIAL_CLUBS);
+}
+
+export async function createStudentClub(data: Omit<StudentClub, "id">): Promise<StudentClub> {
+  const clubs = getStore<StudentClub>(KEYS.CLUBS, INITIAL_CLUBS);
+  const newClub: StudentClub = {
+    ...data,
+    id: "cl_" + Date.now(),
+  };
+  const updated = [newClub, ...clubs];
+  setStore(KEYS.CLUBS, updated);
+  return newClub;
+}
+
+export async function getCampusEvents(): Promise<CampusEvent[]> {
+  return getStore<CampusEvent>(KEYS.EVENTS, INITIAL_EVENTS);
+}
+
+export async function createCampusEvent(data: Omit<CampusEvent, "id" | "registeredCount">): Promise<CampusEvent> {
+  const events = getStore<CampusEvent>(KEYS.EVENTS, INITIAL_EVENTS);
+  const newEvent: CampusEvent = {
+    ...data,
+    id: "ev_" + Date.now(),
+    registeredCount: 0,
+  };
+  const updated = [newEvent, ...events];
+  setStore(KEYS.EVENTS, updated);
+  return newEvent;
+}
+
+export async function getEventRegistrations(): Promise<EventRegistration[]> {
+  return getStore<EventRegistration>(KEYS.EVENT_REGISTRATIONS, INITIAL_EVENT_REGISTRATIONS);
+}
+
+export async function registerForEvent(data: { eventId: string; studentId: string; studentName: string }): Promise<EventRegistration> {
+  const regs = getStore<EventRegistration>(KEYS.EVENT_REGISTRATIONS, INITIAL_EVENT_REGISTRATIONS);
+  const events = getStore<CampusEvent>(KEYS.EVENTS, INITIAL_EVENTS);
+
+  const existing = regs.find((r) => r.eventId === data.eventId && r.studentId === data.studentId);
+  if (existing) return existing;
+
+  const newReg: EventRegistration = {
+    id: "er_" + Date.now(),
+    eventId: data.eventId,
+    studentId: data.studentId,
+    studentName: data.studentName,
+    registeredDate: new Date().toISOString().split("T")[0],
+    certificateIssued: false,
+    status: "Confirmed",
+  };
+
+  setStore(KEYS.EVENT_REGISTRATIONS, [newReg, ...regs]);
+
+  const updatedEvents = events.map((ev) =>
+    ev.id === data.eventId ? { ...ev, registeredCount: ev.registeredCount + 1 } : ev
+  );
+  setStore(KEYS.EVENTS, updatedEvents);
+
+  return newReg;
+}
+
+// ─── 12. Smart Attendance Kiosk & Faculty Leave API ─────────────────────────
+export async function getAttendancePunches(): Promise<AttendancePunch[]> {
+  return getStore<AttendancePunch>(KEYS.ATTENDANCE_PUNCHES, INITIAL_ATTENDANCE_PUNCHES);
+}
+
+export async function punchAttendance(data: {
+  personType: "Student" | "Faculty";
+  personId: string;
+  personName: string;
+  department: string;
+  punchType: "In" | "Out";
+  verificationMethod: AttendancePunch["verificationMethod"];
+}): Promise<AttendancePunch> {
+  const punches = getStore<AttendancePunch>(KEYS.ATTENDANCE_PUNCHES, INITIAL_ATTENDANCE_PUNCHES);
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const dateStr = now.toISOString().split("T")[0];
+
+  // Check if late (e.g. after 09:00 AM)
+  const isLate = now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() > 10);
+
+  const newPunch: AttendancePunch = {
+    id: "ap_" + Date.now(),
+    personType: data.personType,
+    personId: data.personId,
+    personName: data.personName,
+    department: data.department,
+    punchTime: `${dateStr} ${timeStr}`,
+    punchType: data.punchType,
+    verificationMethod: data.verificationMethod,
+    status: isLate ? "Late Punch" : "On Time",
+  };
+
+  const updated = [newPunch, ...punches];
+  setStore(KEYS.ATTENDANCE_PUNCHES, updated);
+  return newPunch;
+}
+
+export async function getFacultyLeaves(): Promise<FacultyLeaveRequest[]> {
+  return getStore<FacultyLeaveRequest>(KEYS.FACULTY_LEAVES, INITIAL_FACULTY_LEAVES);
+}
+
+export async function applyFacultyLeave(data: {
+  facultyId: string;
+  facultyName: string;
+  department: string;
+  leaveType: FacultyLeaveRequest["leaveType"];
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  reason: string;
+  substituteFaculty: string;
+}): Promise<FacultyLeaveRequest> {
+  const leaves = getStore<FacultyLeaveRequest>(KEYS.FACULTY_LEAVES, INITIAL_FACULTY_LEAVES);
+  const newLeave: FacultyLeaveRequest = {
+    ...data,
+    id: "fl_" + Date.now(),
+    status: "Pending Principal Approval",
+  };
+  const updated = [newLeave, ...leaves];
+  setStore(KEYS.FACULTY_LEAVES, updated);
+  return newLeave;
+}
+
+export async function updateFacultyLeaveStatus(id: string, status: FacultyLeaveRequest["status"]): Promise<FacultyLeaveRequest> {
+  const leaves = getStore<FacultyLeaveRequest>(KEYS.FACULTY_LEAVES, INITIAL_FACULTY_LEAVES);
+  let updatedLeave: FacultyLeaveRequest | null = null;
+  const updated = leaves.map((l) => {
+    if (l.id === id) {
+      updatedLeave = {
+        ...l,
+        status,
+        approvedDate: status === "Approved" ? new Date().toISOString().split("T")[0] : undefined,
+      };
+      return updatedLeave;
+    }
+    return l;
+  });
+  setStore(KEYS.FACULTY_LEAVES, updated);
+  return updatedLeave || leaves[0];
+}
+
+
+
 
