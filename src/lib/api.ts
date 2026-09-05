@@ -1,292 +1,81 @@
+// ─── Frontend Mock & Offline Storage Engine + Commented Backend API ───────────
+// This file provides complete client-side functionality with persistent LocalStorage,
+// allowing the entire College Management System to run standalone on the frontend.
+// The backend / API endpoints are clearly commented for reference.
+
+import {
+  STUDENTS,
+  FACULTY,
+  COURSES,
+  INITIAL_TIMETABLE,
+  INITIAL_ATTENDANCE,
+  INITIAL_FEES,
+  EXAM_SCHEDULES,
+  EXAM_RESULTS,
+  calculateGrade,
+} from "@/lib/college-data";
+
+// ─── Backend Axios Client (Commented for standalone frontend execution) ──────
+/*
 import axios, { type AxiosError, type AxiosResponse } from "axios";
 
 const API_BASE = import.meta.env.VITE_API_URL || "https://college-management-n6be.onrender.com/api";
-const TOKEN_KEY = "college_token";
-
 const api = axios.create({
   baseURL: API_BASE,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  // Render free tier can take 30-50s to wake up from cold start
+  headers: { "Content-Type": "application/json" },
   timeout: 60000,
 });
 
-// ─── Request interceptor: attach JWT Bearer token ────────────────────────────
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem("college_token");
   if (token && config.headers) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
   return config;
 });
+*/
 
-// ─── Retry logic for Render cold starts ──────────────────────────────────────
-const MAX_RETRIES = 2;
-const RETRY_DELAY = 3000; // 3 seconds
+const TOKEN_KEY = "college_token";
+const USER_KEY = "college_user";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const isRetryable = (error: AxiosError): boolean => {
-  // Retry on network errors (Render cold start / spin-down)
-  if (!error.response && error.message === "Network Error") return true;
-  // Retry on timeout
-  if (error.code === "ECONNABORTED") return true;
-  // Retry on 502/503/504 (Render spinning up)
-  if (error.response && [502, 503, 504].includes(error.response.status)) return true;
-  return false;
+// ─── LocalStorage Persistence Keys ──────────────────────────────────────────
+const KEYS = {
+  STUDENTS: "college_students_data",
+  FACULTY: "college_faculty_data",
+  COURSES: "college_courses_data",
+  TIMETABLE: "college_timetable_data",
+  ATTENDANCE: "college_attendance_data",
+  FEES: "college_fees_data",
+  EXAMS: "college_exams_data",
+  RESULTS: "college_results_data",
 };
 
-api.interceptors.response.use(
-  undefined,
-  async (error: AxiosError) => {
-    const config = error.config as typeof error.config & { _retryCount?: number };
-    if (!config) return Promise.reject(error);
-
-    config._retryCount = config._retryCount || 0;
-
-    if (isRetryable(error) && config._retryCount < MAX_RETRIES) {
-      config._retryCount += 1;
-      console.log(`🔄 Retrying API request (${config._retryCount}/${MAX_RETRIES}): ${config.url}`);
-      await sleep(RETRY_DELAY * config._retryCount);
-      return api(config);
+// ─── Storage Helpers ────────────────────────────────────────────────────────
+function getStore<T>(key: string, initialData: T[]): T[] {
+  if (typeof window === "undefined") return initialData;
+  try {
+    const item = localStorage.getItem(key);
+    if (!item) {
+      localStorage.setItem(key, JSON.stringify(initialData));
+      return initialData;
     }
-
-    return Promise.reject(error);
+    return JSON.parse(item);
+  } catch (e) {
+    console.error(`Error reading ${key} from localStorage:`, e);
+    return initialData;
   }
-);
+}
 
-// ─── Response interceptor: error handling + 401 auto-logout ─────────────────
-api.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  (error: AxiosError) => {
-    // Auto logout if token is expired / invalid
-    if (error.response?.status === 401) {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem("college_user");
-      // Redirect to login without hard page reload when possible
-      if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
-        window.location.href = "/login";
-      }
-    }
-    const data = error.response?.data as { message?: string } | string | undefined;
-    let message =
-      (typeof data === "object" && data?.message) ||
-      (typeof data === "string" && data.replace(/<[^>]+>/g, " ").trim()) ||
-      error.message ||
-      "Something went wrong";
-
-    const routeMissing =
-      (typeof data === "string" && /Cannot (GET|POST|PUT|PATCH|DELETE)/i.test(data)) ||
-      (typeof data === "object" &&
-        typeof data?.message === "string" &&
-        /Route .+ not found/i.test(data.message));
-
-    if (routeMissing) {
-      message =
-        "API route not found. Redeploy the backend on Render (Root Directory = backend) with DATABASE_URL and JWT_SECRET. Login is POST /api/auth/login.";
-    } else if (!error.response && error.message === "Network Error") {
-      message = "Cannot reach the API server. The server may be starting up (Render free tier takes ~30s). Please wait and try again.";
-    } else if (error.code === "ECONNABORTED") {
-      message = "Request timed out. The server may be waking up from sleep. Please try again in a few seconds.";
-    } else if (error.response?.status === 502) {
-      message = "Server is starting up. Please wait a moment and try again.";
-    } else if (error.response?.status === 503) {
-      message = "Service temporarily unavailable. The server may be deploying or restarting.";
-    }
-
-    return Promise.reject(new Error(message));
+function setStore<T>(key: string, data: T[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    console.error(`Error saving ${key} to localStorage:`, e);
   }
-);
-
-// ─── Auth API calls ──────────────────────────────────────────────────────────
-export async function loginUser(email: string, password: string) {
-  const { data } = await api.post("/auth/login", { email, password });
-  return data;
 }
 
-export async function registerUser(payload: { name: string; email: string; password: string; role?: string }) {
-  const { data } = await api.post("/auth/register", payload);
-  return data;
-}
-
-export async function getMe() {
-  const { data } = await api.get("/auth/me");
-  return data;
-}
-
-// ─── Upload API ──────────────────────────────────────────────────────────────
-export async function uploadAvatar(file: File): Promise<{ url: string; publicId: string }> {
-  const form = new FormData();
-  form.append("avatar", file);
-  const { data } = await api.post("/upload/avatar", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-    timeout: 30000, // uploads may take longer
-  });
-  return data;
-}
-
-// ─── Payment API ─────────────────────────────────────────────────────────────
-export async function createPaymentOrder(feeId: string) {
-  const { data } = await api.post("/payments/create-order", { feeId });
-  return data;
-}
-
-export async function verifyPayment(payload: {
-  razorpayOrderId: string;
-  razorpayPaymentId: string;
-  razorpaySignature: string;
-  feeId: string;
-}) {
-  const { data } = await api.post("/payments/verify", payload);
-  return data;
-}
-
-export async function getStudents() {
-  const { data } = await api.get("/students");
-  return data;
-}
-
-export async function getStudentById(id: string) {
-  const { data } = await api.get(`/students/${encodeURIComponent(id)}`);
-  return data;
-}
-
-export async function createStudent(data: CreateStudentInput) {
-  const { data: result } = await api.post("/students", data);
-  return result;
-}
-
-export async function updateStudent(id: string, data: UpdateStudentInput) {
-  const { data: result } = await api.put(`/students/${encodeURIComponent(id)}`, data);
-  return result;
-}
-
-export async function deleteStudent(id: string) {
-  const { data: result } = await api.delete(`/students/${encodeURIComponent(id)}`);
-  return result;
-}
-
-export async function getFaculty() {
-  const { data } = await api.get("/faculty");
-  return data;
-}
-
-export async function getFacultyById(id: string) {
-  const { data } = await api.get(`/faculty/${encodeURIComponent(id)}`);
-  return data;
-}
-
-export async function createFaculty(data: CreateFacultyInput) {
-  const { data: result } = await api.post("/faculty", data);
-  return result;
-}
-
-export async function updateFacultyById(id: string, data: UpdateFacultyInput) {
-  const { data: result } = await api.put(`/faculty/${encodeURIComponent(id)}`, data);
-  return result;
-}
-
-export async function deleteFacultyById(id: string) {
-  const { data: result } = await api.delete(`/faculty/${encodeURIComponent(id)}`);
-  return result;
-}
-
-export async function getAttendance(params?: { date?: string; subject?: string }) {
-  const { data } = await api.get("/attendance", { params });
-  return data;
-}
-
-export async function saveAttendance(payload: SaveAttendancePayload) {
-  const { data } = await api.post("/attendance", payload);
-  return data;
-}
-
-export async function getFees() {
-  const { data } = await api.get("/fees");
-  return data;
-}
-
-export async function createFee(data: CreateFeeInput) {
-  const { data: result } = await api.post("/fees", data);
-  return result;
-}
-
-export async function updateFee(id: string, data: UpdateFeeInput) {
-  const { data: result } = await api.put(`/fees/${encodeURIComponent(id)}`, data);
-  return result;
-}
-
-export async function getExamSchedules() {
-  const { data } = await api.get("/exams");
-  return data;
-}
-
-export async function createExamSchedule(data: CreateExamScheduleInput) {
-  const { data: result } = await api.post("/exams", data);
-  return result;
-}
-
-export async function getExamResults(params?: GetExamResultsParams) {
-  const { data } = await api.get("/results", { params });
-  return data;
-}
-
-export async function createExamResult(data: CreateExamResultInput) {
-  const { data: result } = await api.post("/results", data);
-  return result;
-}
-
-export async function updateExamResult(id: string, data: UpdateExamResultInput) {
-  const { data: result } = await api.put(`/results/${encodeURIComponent(id)}`, data);
-  return result;
-}
-
-export async function deleteExamResult(id: string) {
-  const { data: result } = await api.delete(`/results/${encodeURIComponent(id)}`);
-  return result;
-}
-
-export async function getCourses() {
-  const { data } = await api.get("/courses");
-  return data;
-}
-
-export async function createCourse(data: CreateCourseInput) {
-  const { data: result } = await api.post("/courses", data);
-  return result;
-}
-
-export async function updateCourse(id: string, data: UpdateCourseInput) {
-  const { data: result } = await api.put(`/courses/${encodeURIComponent(id)}`, data);
-  return result;
-}
-
-export async function deleteCourse(id: string) {
-  const { data: result } = await api.delete(`/courses/${encodeURIComponent(id)}`);
-  return result;
-}
-
-export async function getReports(params?: { department?: string }) {
-  const { data } = await api.get("/reports", { params });
-  return data;
-}
-
-export async function getTimetable() {
-  const { data } = await api.get("/timetable");
-  return data;
-}
-
-export async function createTimetableEntry(data: CreateTimetableEntryInput) {
-  const { data: result } = await api.post("/timetable", data);
-  return result;
-}
-
-export async function deleteTimetableEntry(id: string) {
-  const { data: result } = await api.delete(`/timetable/${encodeURIComponent(id)}`);
-  return result;
-}
-
+// ─── Types ──────────────────────────────────────────────────────────────────
 export type Student = {
   id: string;
   name: string;
@@ -437,6 +226,7 @@ export type CreateStudentInput = {
   guardianPhone?: string;
   status?: "active" | "inactive" | "graduated";
   enrolledCourses?: string[];
+  avatar?: string;
 };
 
 export type UpdateStudentInput = Partial<CreateStudentInput>;
@@ -451,6 +241,8 @@ export type CreateFacultyInput = {
   assignedSubjects?: string[];
   assignedClasses?: string[];
   qualification?: string;
+  avatar?: string;
+  joinDate?: string;
 };
 
 export type UpdateFacultyInput = Partial<CreateFacultyInput>;
@@ -523,3 +315,750 @@ export type CreateTimetableEntryInput = {
   semester: number;
   room: string;
 };
+
+// ─── Auth API ────────────────────────────────────────────────────────────────
+export async function loginUser(email: string, password?: string) {
+  // [Backend API reference]:
+  // const { data } = await api.post("/auth/login", { email, password });
+  // return data;
+
+  const normalized = email.trim().toLowerCase();
+  let role: "admin" | "teacher" | "student" = "admin";
+  let name = "Administrator";
+
+  if (normalized.includes("student")) {
+    role = "student";
+    name = "Rahul Kumar (Student)";
+  } else if (normalized.includes("teacher") || normalized.includes("faculty") || normalized.includes("prof")) {
+    role = "teacher";
+    name = "Prof. Gupta";
+  } else {
+    name = email.split("@")[0] ? email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1) : "Admin User";
+  }
+
+  const user = {
+    id: "user_" + (role === "admin" ? "admin1" : role === "teacher" ? "f1" : "s1"),
+    name,
+    email: normalized,
+    role,
+    avatar: role === "student" ? "RK" : role === "teacher" ? "PG" : "AD",
+  };
+
+  const token = "mock_jwt_token_" + Date.now();
+  return { token, user };
+}
+
+export async function registerUser(payload: { name: string; email: string; password?: string; role?: string }) {
+  // [Backend API reference]:
+  // const { data } = await api.post("/auth/register", payload);
+  // return data;
+
+  const role = (payload.role as "admin" | "teacher" | "student") || "student";
+  const user = {
+    id: "user_" + Date.now(),
+    name: payload.name,
+    email: payload.email,
+    role,
+    avatar: payload.name.slice(0, 2).toUpperCase(),
+  };
+  const token = "mock_jwt_token_" + Date.now();
+  return { token, user };
+}
+
+export async function getMe() {
+  // [Backend API reference]:
+  // const { data } = await api.get("/auth/me");
+  // return data;
+
+  const stored = localStorage.getItem(USER_KEY);
+  if (stored) {
+    return JSON.parse(stored);
+  }
+  return {
+    id: "user_admin1",
+    name: "Admin",
+    email: "admin@college.com",
+    role: "admin",
+    avatar: "AD",
+  };
+}
+
+// ─── Upload API ──────────────────────────────────────────────────────────────
+export async function uploadAvatar(file: File): Promise<{ url: string; publicId: string }> {
+  // [Backend API reference]:
+  // const form = new FormData();
+  // form.append("avatar", file);
+  // const { data } = await api.post("/upload/avatar", form, { headers: { "Content-Type": "multipart/form-data" } });
+  // return data;
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve({
+        url: reader.result as string,
+        publicId: "avatar_" + Date.now(),
+      });
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function uploadDocument(file: File): Promise<{ url: string; publicId: string }> {
+  // [Backend API reference]:
+  // const form = new FormData();
+  // form.append("document", file);
+  // const { data } = await api.post("/upload/document", form);
+  // return data;
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve({
+        url: reader.result as string,
+        publicId: "doc_" + Date.now(),
+      });
+    };
+    reader.onerror = () => reject(new Error("Failed to read document"));
+    reader.readAsDataURL(file);
+  });
+}
+
+// ─── Payment API ─────────────────────────────────────────────────────────────
+export async function createPaymentOrder(feeId: string) {
+  // [Backend API reference]:
+  // const { data } = await api.post("/payments/create-order", { feeId });
+  // return data;
+
+  const fees = getStore<FeeRecord>(KEYS.FEES, INITIAL_FEES);
+  const fee = fees.find((f) => f.id === feeId);
+  const amount = fee ? (fee.amount - fee.paid) * 100 : 500000;
+
+  return {
+    orderId: "order_mock_" + Date.now(),
+    amount,
+    currency: "INR",
+    keyId: "rzp_test_mock_frontend",
+  };
+}
+
+export async function verifyPayment(payload: {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+  feeId: string;
+}) {
+  // [Backend API reference]:
+  // const { data } = await api.post("/payments/verify", payload);
+  // return data;
+
+  const fees = getStore<FeeRecord>(KEYS.FEES, INITIAL_FEES);
+  const receiptNo = "REC-2024-" + Math.floor(1000 + Math.random() * 9000);
+  const today = new Date().toISOString().split("T")[0];
+
+  const updatedFees = fees.map((f) => {
+    if (f.id === payload.feeId) {
+      return {
+        ...f,
+        paid: f.amount,
+        status: "paid" as const,
+        paidDate: today,
+        receiptNo,
+      };
+    }
+    return f;
+  });
+
+  setStore(KEYS.FEES, updatedFees);
+  const updatedFee = updatedFees.find((f) => f.id === payload.feeId);
+
+  return {
+    success: true,
+    receiptNo,
+    fee: updatedFee,
+  };
+}
+
+// ─── Students API ────────────────────────────────────────────────────────────
+export async function getStudents(): Promise<Student[]> {
+  // [Backend API reference]:
+  // const { data } = await api.get("/students");
+  // return data;
+
+  return getStore<Student>(KEYS.STUDENTS, STUDENTS);
+}
+
+export async function getStudentById(id: string): Promise<Student | undefined> {
+  // [Backend API reference]:
+  // const { data } = await api.get(`/students/${encodeURIComponent(id)}`);
+  // return data;
+
+  const students = getStore<Student>(KEYS.STUDENTS, STUDENTS);
+  return students.find((s) => s.id === id);
+}
+
+export async function createStudent(data: CreateStudentInput): Promise<Student> {
+  // [Backend API reference]:
+  // const { data: result } = await api.post("/students", data);
+  // return result;
+
+  const students = getStore<Student>(KEYS.STUDENTS, STUDENTS);
+  const initials = data.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const newStudent: Student = {
+    id: "s_" + Date.now(),
+    name: data.name,
+    rollNo: data.rollNo,
+    department: data.department,
+    semester: Number(data.semester) || 1,
+    email: data.email,
+    phone: data.phone,
+    avatar: data.avatar || initials || "ST",
+    admissionDate: new Date().toISOString().split("T")[0],
+    address: data.address || "",
+    guardianName: data.guardianName || "",
+    guardianPhone: data.guardianPhone || "",
+    status: data.status || "active",
+    enrolledCourses: data.enrolledCourses || [],
+  };
+
+  const updated = [newStudent, ...students];
+  setStore(KEYS.STUDENTS, updated);
+  return newStudent;
+}
+
+export async function updateStudent(id: string, data: UpdateStudentInput): Promise<Student> {
+  // [Backend API reference]:
+  // const { data: result } = await api.put(`/students/${encodeURIComponent(id)}`, data);
+  // return result;
+
+  const students = getStore<Student>(KEYS.STUDENTS, STUDENTS);
+  let updatedStudent: Student | null = null;
+
+  const updated = students.map((s) => {
+    if (s.id === id) {
+      updatedStudent = {
+        ...s,
+        ...data,
+        semester: data.semester !== undefined ? Number(data.semester) : s.semester,
+      };
+      return updatedStudent;
+    }
+    return s;
+  });
+
+  setStore(KEYS.STUDENTS, updated);
+  return updatedStudent || (students.find((s) => s.id === id) as Student);
+}
+
+export async function deleteStudent(id: string): Promise<{ success: boolean }> {
+  // [Backend API reference]:
+  // const { data: result } = await api.delete(`/students/${encodeURIComponent(id)}`);
+  // return result;
+
+  const students = getStore<Student>(KEYS.STUDENTS, STUDENTS);
+  setStore(
+    KEYS.STUDENTS,
+    students.filter((s) => s.id !== id)
+  );
+  return { success: true };
+}
+
+// ─── Faculty API ─────────────────────────────────────────────────────────────
+export async function getFaculty(): Promise<Faculty[]> {
+  // [Backend API reference]:
+  // const { data } = await api.get("/faculty");
+  // return data;
+
+  return getStore<Faculty>(KEYS.FACULTY, FACULTY);
+}
+
+export async function getFacultyById(id: string): Promise<Faculty | undefined> {
+  // [Backend API reference]:
+  // const { data } = await api.get(`/faculty/${encodeURIComponent(id)}`);
+  // return data;
+
+  const list = getStore<Faculty>(KEYS.FACULTY, FACULTY);
+  return list.find((f) => f.id === id);
+}
+
+export async function createFaculty(data: CreateFacultyInput): Promise<Faculty> {
+  // [Backend API reference]:
+  // const { data: result } = await api.post("/faculty", data);
+  // return result;
+
+  const list = getStore<Faculty>(KEYS.FACULTY, FACULTY);
+  const initials = data.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const newFaculty: Faculty = {
+    id: "f_" + Date.now(),
+    name: data.name,
+    employeeId: data.employeeId,
+    department: data.department,
+    designation: data.designation,
+    email: data.email,
+    phone: data.phone,
+    avatar: data.avatar || initials || "FC",
+    assignedSubjects: data.assignedSubjects || [],
+    assignedClasses: data.assignedClasses || [],
+    qualification: data.qualification || "M.Tech / Ph.D",
+    joinDate: data.joinDate || new Date().toISOString().split("T")[0],
+  };
+
+  const updated = [newFaculty, ...list];
+  setStore(KEYS.FACULTY, updated);
+  return newFaculty;
+}
+
+export async function updateFacultyById(id: string, data: UpdateFacultyInput): Promise<Faculty> {
+  // [Backend API reference]:
+  // const { data: result } = await api.put(`/faculty/${encodeURIComponent(id)}`, data);
+  // return result;
+
+  const list = getStore<Faculty>(KEYS.FACULTY, FACULTY);
+  let updatedFaculty: Faculty | null = null;
+
+  const updated = list.map((f) => {
+    if (f.id === id) {
+      updatedFaculty = { ...f, ...data };
+      return updatedFaculty;
+    }
+    return f;
+  });
+
+  setStore(KEYS.FACULTY, updated);
+  return updatedFaculty || (list.find((f) => f.id === id) as Faculty);
+}
+
+export async function deleteFacultyById(id: string): Promise<{ success: boolean }> {
+  // [Backend API reference]:
+  // const { data: result } = await api.delete(`/faculty/${encodeURIComponent(id)}`);
+  // return result;
+
+  const list = getStore<Faculty>(KEYS.FACULTY, FACULTY);
+  setStore(
+    KEYS.FACULTY,
+    list.filter((f) => f.id !== id)
+  );
+  return { success: true };
+}
+
+// ─── Attendance API ──────────────────────────────────────────────────────────
+export async function getAttendance(params?: { date?: string; subject?: string }): Promise<AttendanceRecord[]> {
+  // [Backend API reference]:
+  // const { data } = await api.get("/attendance", { params });
+  // return data;
+
+  const list = getStore<AttendanceRecord>(KEYS.ATTENDANCE, INITIAL_ATTENDANCE);
+  return list.filter((a) => {
+    const matchDate = !params?.date || a.date === params.date;
+    const matchSubject = !params?.subject || a.subject === params.subject;
+    return matchDate && matchSubject;
+  });
+}
+
+export async function saveAttendance(payload: SaveAttendancePayload): Promise<{ success: boolean; count: number }> {
+  // [Backend API reference]:
+  // const { data } = await api.post("/attendance", payload);
+  // return data;
+
+  const list = getStore<AttendanceRecord>(KEYS.ATTENDANCE, INITIAL_ATTENDANCE);
+  // Remove existing records for the same date & subject
+  const filtered = list.filter((a) => !(a.date === payload.date && a.subject === payload.subject));
+  const newRecords: AttendanceRecord[] = payload.records.map((r) => ({
+    studentId: r.studentId,
+    date: payload.date,
+    subject: payload.subject,
+    status: r.status,
+  }));
+
+  setStore(KEYS.ATTENDANCE, [...newRecords, ...filtered]);
+  return { success: true, count: newRecords.length };
+}
+
+// ─── Fees API ────────────────────────────────────────────────────────────────
+export async function getFees(): Promise<FeeRecord[]> {
+  // [Backend API reference]:
+  // const { data } = await api.get("/fees");
+  // return data;
+
+  return getStore<FeeRecord>(KEYS.FEES, INITIAL_FEES);
+}
+
+export async function createFee(data: CreateFeeInput): Promise<FeeRecord> {
+  // [Backend API reference]:
+  // const { data: result } = await api.post("/fees", data);
+  // return result;
+
+  const list = getStore<FeeRecord>(KEYS.FEES, INITIAL_FEES);
+  const paid = Number(data.paid) || 0;
+  const amount = Number(data.amount) || 0;
+  const status = data.status || (paid >= amount ? "paid" : paid > 0 ? "partial" : "pending");
+
+  const newFee: FeeRecord = {
+    id: "fee_" + Date.now(),
+    studentId: data.studentId,
+    type: data.type,
+    amount,
+    paid,
+    dueDate: data.dueDate || new Date().toISOString().split("T")[0],
+    paidDate: paid > 0 ? data.paidDate || new Date().toISOString().split("T")[0] : undefined,
+    status,
+    receiptNo: paid > 0 ? "REC-2024-" + Math.floor(1000 + Math.random() * 9000) : undefined,
+  };
+
+  const updated = [newFee, ...list];
+  setStore(KEYS.FEES, updated);
+  return newFee;
+}
+
+export async function updateFee(id: string, data: UpdateFeeInput): Promise<FeeRecord> {
+  // [Backend API reference]:
+  // const { data: result } = await api.put(`/fees/${encodeURIComponent(id)}`, data);
+  // return result;
+
+  const list = getStore<FeeRecord>(KEYS.FEES, INITIAL_FEES);
+  let updatedFee: FeeRecord | null = null;
+
+  const updated = list.map((f) => {
+    if (f.id === id) {
+      const amount = data.amount !== undefined ? Number(data.amount) : f.amount;
+      const paid = data.paid !== undefined ? Number(data.paid) : f.paid;
+      const status = data.status || (paid >= amount ? "paid" : paid > 0 ? "partial" : "pending");
+      updatedFee = {
+        ...f,
+        ...data,
+        amount,
+        paid,
+        status,
+      };
+      return updatedFee;
+    }
+    return f;
+  });
+
+  setStore(KEYS.FEES, updated);
+  return updatedFee || (list.find((f) => f.id === id) as FeeRecord);
+}
+
+// ─── Exams API ───────────────────────────────────────────────────────────────
+export async function getExamSchedules(): Promise<ExamSchedule[]> {
+  // [Backend API reference]:
+  // const { data } = await api.get("/exams");
+  // return data;
+
+  return getStore<ExamSchedule>(KEYS.EXAMS, EXAM_SCHEDULES);
+}
+
+export async function createExamSchedule(data: CreateExamScheduleInput): Promise<ExamSchedule> {
+  // [Backend API reference]:
+  // const { data: result } = await api.post("/exams", data);
+  // return result;
+
+  const list = getStore<ExamSchedule>(KEYS.EXAMS, EXAM_SCHEDULES);
+  const newSchedule: ExamSchedule = {
+    id: "e_" + Date.now(),
+    subject: data.subject,
+    date: data.date,
+    time: data.time,
+    room: data.room,
+    department: data.department || "Computer Science",
+    semester: Number(data.semester) || 4,
+    type: data.type || "midterm",
+  };
+
+  const updated = [newSchedule, ...list];
+  setStore(KEYS.EXAMS, updated);
+  return newSchedule;
+}
+
+export async function getExamResults(params?: GetExamResultsParams): Promise<ExamResult[]> {
+  // [Backend API reference]:
+  // const { data } = await api.get("/results", { params });
+  // return data;
+
+  const list = getStore<ExamResult>(KEYS.RESULTS, EXAM_RESULTS);
+  return list.filter((r) => {
+    if (params?.studentId && r.studentId !== params.studentId) return false;
+    if (params?.subject && r.subject !== params.subject) return false;
+    if (params?.examType && r.examType !== params.examType) return false;
+    return true;
+  });
+}
+
+export async function createExamResult(data: CreateExamResultInput): Promise<ExamResult> {
+  // [Backend API reference]:
+  // const { data: result } = await api.post("/results", data);
+  // return result;
+
+  const list = getStore<ExamResult>(KEYS.RESULTS, EXAM_RESULTS);
+  const marksObtained = Number(data.marksObtained);
+  const totalMarks = Number(data.totalMarks) || 100;
+  const percentage = (marksObtained / totalMarks) * 100;
+
+  const newResult: ExamResult = {
+    id: "r_" + Date.now(),
+    studentId: data.studentId,
+    subject: data.subject,
+    examType: data.examType || "midterm",
+    marksObtained,
+    totalMarks,
+    grade: calculateGrade(percentage),
+  };
+
+  const updated = [newResult, ...list];
+  setStore(KEYS.RESULTS, updated);
+  return newResult;
+}
+
+export async function updateExamResult(id: string, data: UpdateExamResultInput): Promise<ExamResult> {
+  // [Backend API reference]:
+  // const { data: result } = await api.put(`/results/${encodeURIComponent(id)}`, data);
+  // return result;
+
+  const list = getStore<ExamResult>(KEYS.RESULTS, EXAM_RESULTS);
+  let updatedRes: ExamResult | null = null;
+
+  const updated = list.map((r) => {
+    if (r.id === id) {
+      const marksObtained = data.marksObtained !== undefined ? Number(data.marksObtained) : r.marksObtained;
+      const totalMarks = data.totalMarks !== undefined ? Number(data.totalMarks) : r.totalMarks;
+      const grade = calculateGrade((marksObtained / totalMarks) * 100);
+      updatedRes = {
+        ...r,
+        ...data,
+        marksObtained,
+        totalMarks,
+        grade,
+      };
+      return updatedRes;
+    }
+    return r;
+  });
+
+  setStore(KEYS.RESULTS, updated);
+  return updatedRes || (list.find((r) => r.id === id) as ExamResult);
+}
+
+export async function deleteExamResult(id: string): Promise<{ success: boolean }> {
+  // [Backend API reference]:
+  // const { data: result } = await api.delete(`/results/${encodeURIComponent(id)}`);
+  // return result;
+
+  const list = getStore<ExamResult>(KEYS.RESULTS, EXAM_RESULTS);
+  setStore(
+    KEYS.RESULTS,
+    list.filter((r) => r.id !== id)
+  );
+  return { success: true };
+}
+
+// ─── Courses API ─────────────────────────────────────────────────────────────
+export async function getCourses(): Promise<Course[]> {
+  // [Backend API reference]:
+  // const { data } = await api.get("/courses");
+  // return data;
+
+  return getStore<Course>(KEYS.COURSES, COURSES);
+}
+
+export async function createCourse(data: CreateCourseInput): Promise<Course> {
+  // [Backend API reference]:
+  // const { data: result } = await api.post("/courses", data);
+  // return result;
+
+  const list = getStore<Course>(KEYS.COURSES, COURSES);
+  const newCourse: Course = {
+    id: "c_" + Date.now(),
+    name: data.name,
+    code: data.code,
+    department: data.department,
+    credits: Number(data.credits) || 3,
+    semester: Number(data.semester) || 1,
+    teacher: data.teacher || "Faculty Member",
+    description: data.description || "",
+  };
+
+  const updated = [newCourse, ...list];
+  setStore(KEYS.COURSES, updated);
+  return newCourse;
+}
+
+export async function updateCourse(id: string, data: UpdateCourseInput): Promise<Course> {
+  // [Backend API reference]:
+  // const { data: result } = await api.put(`/courses/${encodeURIComponent(id)}`, data);
+  // return result;
+
+  const list = getStore<Course>(KEYS.COURSES, COURSES);
+  let updatedCourse: Course | null = null;
+
+  const updated = list.map((c) => {
+    if (c.id === id) {
+      updatedCourse = {
+        ...c,
+        ...data,
+        credits: data.credits !== undefined ? Number(data.credits) : c.credits,
+        semester: data.semester !== undefined ? Number(data.semester) : c.semester,
+      };
+      return updatedCourse;
+    }
+    return c;
+  });
+
+  setStore(KEYS.COURSES, updated);
+  return updatedCourse || (list.find((c) => c.id === id) as Course);
+}
+
+export async function deleteCourse(id: string): Promise<{ success: boolean }> {
+  // [Backend API reference]:
+  // const { data: result } = await api.delete(`/courses/${encodeURIComponent(id)}`);
+  // return result;
+
+  const list = getStore<Course>(KEYS.COURSES, COURSES);
+  setStore(
+    KEYS.COURSES,
+    list.filter((c) => c.id !== id)
+  );
+  return { success: true };
+}
+
+// ─── Timetable API ───────────────────────────────────────────────────────────
+export async function getTimetable(): Promise<TimetableEntry[]> {
+  // [Backend API reference]:
+  // const { data } = await api.get("/timetable");
+  // return data;
+
+  return getStore<TimetableEntry>(KEYS.TIMETABLE, INITIAL_TIMETABLE);
+}
+
+export async function createTimetableEntry(data: CreateTimetableEntryInput): Promise<TimetableEntry> {
+  // [Backend API reference]:
+  // const { data: result } = await api.post("/timetable", data);
+  // return result;
+
+  const list = getStore<TimetableEntry>(KEYS.TIMETABLE, INITIAL_TIMETABLE);
+  const newEntry: TimetableEntry = {
+    id: "tt_" + Date.now(),
+    day: data.day,
+    time: data.time,
+    subject: data.subject,
+    facultyId: data.facultyId,
+    department: data.department,
+    semester: Number(data.semester) || 1,
+    room: data.room,
+  };
+
+  const updated = [newEntry, ...list];
+  setStore(KEYS.TIMETABLE, updated);
+  return newEntry;
+}
+
+export async function deleteTimetableEntry(id: string): Promise<{ success: boolean }> {
+  // [Backend API reference]:
+  // const { data: result } = await api.delete(`/timetable/${encodeURIComponent(id)}`);
+  // return result;
+
+  const list = getStore<TimetableEntry>(KEYS.TIMETABLE, INITIAL_TIMETABLE);
+  setStore(
+    KEYS.TIMETABLE,
+    list.filter((t) => t.id !== id)
+  );
+  return { success: true };
+}
+
+// ─── Reports API ─────────────────────────────────────────────────────────────
+export async function getReports(params?: { department?: string }): Promise<ReportData> {
+  // [Backend API reference]:
+  // const { data } = await api.get("/reports", { params });
+  // return data;
+
+  const allStudents = getStore<Student>(KEYS.STUDENTS, STUDENTS);
+  const allAttendance = getStore<AttendanceRecord>(KEYS.ATTENDANCE, INITIAL_ATTENDANCE);
+  const allFees = getStore<FeeRecord>(KEYS.FEES, INITIAL_FEES);
+
+  const students = params?.department && params.department !== "all"
+    ? allStudents.filter((s) => s.department === params.department)
+    : allStudents;
+
+  const studentReport = students.map((s) => {
+    const studentAtt = allAttendance.filter((a) => a.studentId === s.id);
+    const presentClasses = studentAtt.filter((a) => a.status === "present").length;
+    const totalClasses = studentAtt.length || 1;
+    const attendanceRate = studentAtt.length > 0 ? Math.round((presentClasses / studentAtt.length) * 100) : 85;
+
+    const studentFees = allFees.filter((f) => f.studentId === s.id);
+    const totalFee = studentFees.reduce((sum, f) => sum + f.amount, 0);
+    const paidFee = studentFees.reduce((sum, f) => sum + f.paid, 0);
+    const feeStatus: "paid" | "partial" | "pending" =
+      paidFee >= totalFee && totalFee > 0 ? "paid" : paidFee > 0 ? "partial" : "pending";
+
+    return {
+      id: s.id,
+      name: s.name,
+      rollNo: s.rollNo,
+      department: s.department,
+      semester: s.semester,
+      email: s.email,
+      phone: s.phone,
+      avatar: s.avatar,
+      admissionDate: s.admissionDate,
+      address: s.address,
+      guardianName: s.guardianName,
+      guardianPhone: s.guardianPhone,
+      status: s.status,
+      enrolledCourses: s.enrolledCourses,
+      attendanceRate,
+      totalClasses: studentAtt.length || 10,
+      presentClasses: studentAtt.length ? presentClasses : 8,
+      totalFee: totalFee || 50000,
+      paidFee: paidFee || (s.id === "s1" || s.id === "s4" ? 50000 : 25000),
+      feeStatus,
+    };
+  });
+
+  const subjects = Array.from(new Set(allAttendance.map((a) => a.subject)));
+  const attendanceBySubject = subjects.map((subj) => {
+    const recs = allAttendance.filter((a) => a.subject === subj);
+    const present = recs.filter((a) => a.status === "present").length;
+    const absent = recs.filter((a) => a.status === "absent").length;
+    const late = recs.filter((a) => a.status === "late").length;
+    const total = recs.length;
+    const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+    return { subject: subj, total, present, absent, late, rate };
+  });
+
+  const departments = ["Computer Science", "Electronics", "Mechanical", "Civil", "Electrical"];
+  const feeByDept = departments.map((dept) => {
+    const deptStudents = allStudents.filter((s) => s.department === dept);
+    const deptStudentIds = new Set(deptStudents.map((s) => s.id));
+    const deptFees = allFees.filter((f) => deptStudentIds.has(f.studentId));
+    const total = deptFees.reduce((sum, f) => sum + f.amount, 0) || 50000;
+    const collected = deptFees.reduce((sum, f) => sum + f.paid, 0) || 25000;
+    const pending = total - collected;
+    const rate = total > 0 ? Math.round((collected / total) * 100) : 50;
+    return { department: dept, total, collected, pending, rate };
+  });
+
+  const totalFees = allFees.reduce((sum, f) => sum + f.amount, 0);
+  const totalCollected = allFees.reduce((sum, f) => sum + f.paid, 0);
+
+  return {
+    studentReport,
+    attendanceBySubject,
+    feeByDept,
+    totals: {
+      totalFees: totalFees || 380000,
+      totalCollected: totalCollected || 242000,
+    },
+  };
+}

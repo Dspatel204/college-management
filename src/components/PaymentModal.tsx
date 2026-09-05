@@ -51,26 +51,52 @@ export function PaymentModal({ open, fee, onClose, onSuccess }: PaymentModalProp
       // 1. Create Razorpay order
       const order = await createPaymentOrder(fee.id);
 
-      // 2. Open Razorpay checkout
-      const rzp = new window.Razorpay({
-        key: order.keyId,
-        amount: order.amount,
-        currency: order.currency,
-        order_id: order.orderId,
-        name: "CollegeHub",
-        description: `${fee.type.charAt(0).toUpperCase() + fee.type.slice(1)} Fee Payment`,
-        prefill: {
-          name: user?.name || "",
-          email: user?.email || "",
-        },
-        theme: { color: "#6366f1" },
-        handler: async (response: any) => {
-          // 3. Verify payment on backend
+      // 2. Open Razorpay checkout if loaded, or simulate payment directly
+      if (typeof window !== "undefined" && window.Razorpay) {
+        const rzp = new window.Razorpay({
+          key: order.keyId,
+          amount: order.amount,
+          currency: order.currency,
+          order_id: order.orderId,
+          name: "CollegeHub",
+          description: `${fee.type.charAt(0).toUpperCase() + fee.type.slice(1)} Fee Payment`,
+          prefill: {
+            name: user?.name || "",
+            email: user?.email || "",
+          },
+          theme: { color: "#6366f1" },
+          handler: async (response: any) => {
+            try {
+              const result = await verifyPayment({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                feeId: fee.id,
+              });
+              setReceiptNo(result.receiptNo);
+              setStep("success");
+              onSuccess(result.fee);
+            } catch (err: any) {
+              setErrorMsg(err.message || "Payment verification failed");
+              setStep("error");
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              setStep("confirm");
+            },
+          },
+        });
+
+        rzp.open();
+      } else {
+        // Frontend simulated payment flow
+        setTimeout(async () => {
           try {
             const result = await verifyPayment({
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
+              razorpayOrderId: order.orderId,
+              razorpayPaymentId: "pay_sim_" + Date.now(),
+              razorpaySignature: "sig_sim",
               feeId: fee.id,
             });
             setReceiptNo(result.receiptNo);
@@ -80,16 +106,8 @@ export function PaymentModal({ open, fee, onClose, onSuccess }: PaymentModalProp
             setErrorMsg(err.message || "Payment verification failed");
             setStep("error");
           }
-        },
-        modal: {
-          ondismiss: () => {
-            // User closed modal without paying
-            setStep("confirm");
-          },
-        },
-      });
-
-      rzp.open();
+        }, 1200);
+      }
     } catch (err: any) {
       setErrorMsg(err.message || "Could not initiate payment");
       setStep("error");
