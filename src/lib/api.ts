@@ -8,6 +8,8 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // Render free tier can take 30-50s to wake up from cold start
+  timeout: 60000,
 });
 
 // ─── Request interceptor: attach JWT Bearer token ────────────────────────────
@@ -18,6 +20,41 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// ─── Retry logic for Render cold starts ──────────────────────────────────────
+const MAX_RETRIES = 2;
+const RETRY_DELAY = 3000; // 3 seconds
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const isRetryable = (error: AxiosError): boolean => {
+  // Retry on network errors (Render cold start / spin-down)
+  if (!error.response && error.message === "Network Error") return true;
+  // Retry on timeout
+  if (error.code === "ECONNABORTED") return true;
+  // Retry on 502/503/504 (Render spinning up)
+  if (error.response && [502, 503, 504].includes(error.response.status)) return true;
+  return false;
+};
+
+api.interceptors.response.use(
+  undefined,
+  async (error: AxiosError) => {
+    const config = error.config as typeof error.config & { _retryCount?: number };
+    if (!config) return Promise.reject(error);
+
+    config._retryCount = config._retryCount || 0;
+
+    if (isRetryable(error) && config._retryCount < MAX_RETRIES) {
+      config._retryCount += 1;
+      console.log(`🔄 Retrying API request (${config._retryCount}/${MAX_RETRIES}): ${config.url}`);
+      await sleep(RETRY_DELAY * config._retryCount);
+      return api(config);
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // ─── Response interceptor: error handling + 401 auto-logout ─────────────────
 api.interceptors.response.use(
@@ -49,7 +86,13 @@ api.interceptors.response.use(
       message =
         "API route not found. Redeploy the backend on Render (Root Directory = backend) with DATABASE_URL and JWT_SECRET. Login is POST /api/auth/login.";
     } else if (!error.response && error.message === "Network Error") {
-      message = "Cannot reach the API. Check VITE_API_URL, CORS, and that the Render service is awake.";
+      message = "Cannot reach the API server. The server may be starting up (Render free tier takes ~30s). Please wait and try again.";
+    } else if (error.code === "ECONNABORTED") {
+      message = "Request timed out. The server may be waking up from sleep. Please try again in a few seconds.";
+    } else if (error.response?.status === 502) {
+      message = "Server is starting up. Please wait a moment and try again.";
+    } else if (error.response?.status === 503) {
+      message = "Service temporarily unavailable. The server may be deploying or restarting.";
     }
 
     return Promise.reject(new Error(message));
@@ -78,6 +121,7 @@ export async function uploadAvatar(file: File): Promise<{ url: string; publicId:
   form.append("avatar", file);
   const { data } = await api.post("/upload/avatar", form, {
     headers: { "Content-Type": "multipart/form-data" },
+    timeout: 30000, // uploads may take longer
   });
   return data;
 }

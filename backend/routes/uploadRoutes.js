@@ -5,10 +5,11 @@ const { uploadAvatar, uploadDocument } = require('../middleware/uploadMiddleware
 
 // POST /api/upload/avatar
 // All authenticated users can upload their avatar
+// uploadAvatar is a full middleware that internally calls multer.single('avatar')
 router.post(
   '/avatar',
   authMiddleware,
-  uploadAvatar.single('avatar'),
+  uploadAvatar,
   (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -23,10 +24,11 @@ router.post(
 
 // POST /api/upload/document
 // Admin and teachers can upload documents
+// uploadDocument is a full middleware that internally calls multer.single('document')
 router.post(
   '/document',
   authMiddleware,
-  uploadDocument.single('document'),
+  uploadDocument,
   (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });

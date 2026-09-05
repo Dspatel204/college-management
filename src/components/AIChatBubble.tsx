@@ -37,6 +37,7 @@ const collegeResponses: Record<string, string> = {
   transport:
     "Transport facility ke liye **Transport** section check karein. Wahan bus routes, timings, aur route map available hai. Agar koi bus miss ho ya complaint ho to transport department se contact karein.",
 
+    
   notice:
     "Latest notices ke liye **Notice Board** section dekhein. Wahan exam dates, holidays, events, aur important announcements regularly update hote hain. Regular check karna mat bhulein!",
 
