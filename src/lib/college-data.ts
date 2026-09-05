@@ -239,3 +239,198 @@ export function calculateGrade(percentage: number): string {
   if (percentage >= 40) return "D";
   return "F";
 }
+
+// ─── Placement & Career Types & Initial Data ────────────────────────────────
+export interface PlacementDrive {
+  id: string;
+  companyName: string;
+  logo: string;
+  role: string;
+  packageLPA: number;
+  eligibilityCgpa: number;
+  minAttendanceRate: number;
+  allowedBacklogs: number;
+  eligibleDepartments: string[];
+  driveDate: string;
+  location: string;
+  type: "Full-Time" | "Internship" | "Pre-Placement Offer";
+  status: "Upcoming" | "Active" | "Completed";
+  description: string;
+  registeredCount: number;
+  shortlistedCount: number;
+  placedCount: number;
+}
+
+export interface StudentPlacementProfile {
+  studentId: string;
+  cgpa: number;
+  resumeScore: number;
+  skills: string[];
+  certifications: string[];
+  githubUrl?: string;
+  linkedinUrl?: string;
+  placementStatus: "Searching" | "Shortlisted" | "Placed" | "Opted Out";
+  placedCompany?: string;
+  packageOffered?: number;
+}
+
+export interface PlacementApplication {
+  id: string;
+  driveId: string;
+  studentId: string;
+  appliedDate: string;
+  status: "Applied" | "Shortlisted" | "Interview Scheduled" | "Offered" | "Rejected";
+  notes?: string;
+}
+
+export const INITIAL_PLACEMENT_DRIVES: PlacementDrive[] = [
+  {
+    id: "pd1",
+    companyName: "Google Cloud",
+    logo: "G",
+    role: "Associate Cloud Engineer",
+    packageLPA: 24.5,
+    eligibilityCgpa: 8.0,
+    minAttendanceRate: 75,
+    allowedBacklogs: 0,
+    eligibleDepartments: ["Computer Science", "Electronics"],
+    driveDate: "2024-05-20",
+    location: "Campus Auditorium / Virtual",
+    type: "Full-Time",
+    status: "Upcoming",
+    description: "Designing scalable distributed systems and deploying enterprise applications on GCP.",
+    registeredCount: 38,
+    shortlistedCount: 12,
+    placedCount: 0,
+  },
+  {
+    id: "pd2",
+    companyName: "Microsoft",
+    logo: "M",
+    role: "Software Development Engineer (SDE-1)",
+    packageLPA: 21.0,
+    eligibilityCgpa: 7.5,
+    minAttendanceRate: 75,
+    allowedBacklogs: 0,
+    eligibleDepartments: ["Computer Science", "Electronics", "Electrical"],
+    driveDate: "2024-05-25",
+    location: "Main Seminar Hall",
+    type: "Full-Time",
+    status: "Active",
+    description: "Full-stack development, Azure services integration, and algorithms.",
+    registeredCount: 45,
+    shortlistedCount: 15,
+    placedCount: 4,
+  },
+  {
+    id: "pd3",
+    companyName: "Tata Consultancy Services (TCS Digital)",
+    logo: "TCS",
+    role: "Digital Systems Specialist",
+    packageLPA: 9.0,
+    eligibilityCgpa: 6.5,
+    minAttendanceRate: 70,
+    allowedBacklogs: 1,
+    eligibleDepartments: ["Computer Science", "Electronics", "Mechanical", "Civil", "Electrical"],
+    driveDate: "2024-04-10",
+    location: "Lab Complex 3",
+    type: "Full-Time",
+    status: "Completed",
+    description: "Enterprise software modernization and automation solutions.",
+    registeredCount: 65,
+    shortlistedCount: 28,
+    placedCount: 18,
+  },
+  {
+    id: "pd4",
+    companyName: "Infosys Wings",
+    logo: "INF",
+    role: "Specialist Programmer",
+    packageLPA: 9.5,
+    eligibilityCgpa: 7.0,
+    minAttendanceRate: 75,
+    allowedBacklogs: 0,
+    eligibleDepartments: ["Computer Science", "Electronics", "Electrical"],
+    driveDate: "2024-06-05",
+    location: "Virtual Campus Drive",
+    type: "Full-Time",
+    status: "Upcoming",
+    description: "Full stack Java/Spring Boot & React development.",
+    registeredCount: 29,
+    shortlistedCount: 0,
+    placedCount: 0,
+  },
+];
+
+export const INITIAL_STUDENT_PLACEMENTS: StudentPlacementProfile[] = [
+  { studentId: "s1", cgpa: 8.8, resumeScore: 92, skills: ["React", "TypeScript", "Node.js", "Python", "DSA"], certifications: ["AWS Certified Developer", "Meta Frontend Specialization"], githubUrl: "github.com/rahulkumar", linkedinUrl: "linkedin.com/in/rahulkumar", placementStatus: "Shortlisted" },
+  { studentId: "s2", cgpa: 8.5, resumeScore: 88, skills: ["Java", "Spring Boot", "MySQL", "Docker"], certifications: ["Oracle Java SE", "Docker Essentials"], githubUrl: "github.com/priyasingh", linkedinUrl: "linkedin.com/in/priyasingh", placementStatus: "Shortlisted" },
+  { studentId: "s3", cgpa: 6.8, resumeScore: 65, skills: ["C++", "HTML/CSS", "JavaScript"], certifications: ["Python for Beginners"], placementStatus: "Searching" },
+  { studentId: "s4", cgpa: 8.2, resumeScore: 85, skills: ["VLSI", "Verilog", "Embedded C", "IoT"], certifications: ["Embedded Systems Certification"], placementStatus: "Searching" },
+  { studentId: "s5", cgpa: 7.9, resumeScore: 78, skills: ["AutoCAD", "SolidWorks", "ANSYS", "Python"], certifications: ["Certified CAD Professional"], placementStatus: "Searching" },
+  { studentId: "s8", cgpa: 8.9, resumeScore: 90, skills: ["Structural Design", "Revit", "STAAD.Pro", "GIS"], certifications: ["BIM Professional"], placementStatus: "Placed", placedCompany: "L&T Construction", packageOffered: 8.5 },
+  { studentId: "s9", cgpa: 8.1, resumeScore: 82, skills: ["Power Electronics", "MATLAB", "PLC/SCADA"], certifications: ["Siemens Automation"], placementStatus: "Searching" },
+  { studentId: "s10", cgpa: 8.6, resumeScore: 89, skills: ["React", "Go", "Kubernetes", "PostgreSQL"], certifications: ["CKA Certified", "GCP Associate"], placementStatus: "Placed", placedCompany: "Microsoft", packageOffered: 21.0 },
+];
+
+export const INITIAL_APPLICATIONS: PlacementApplication[] = [
+  { id: "app1", driveId: "pd2", studentId: "s1", appliedDate: "2024-04-18", status: "Interview Scheduled", notes: "Cleared Coding round (Rank #2)" },
+  { id: "app2", driveId: "pd2", studentId: "s2", appliedDate: "2024-04-18", status: "Interview Scheduled", notes: "Cleared Technical Assessment" },
+  { id: "app3", driveId: "pd2", studentId: "s10", appliedDate: "2024-04-18", status: "Offered", notes: "Final offer rolled out - ₹21 LPA" },
+  { id: "app4", driveId: "pd1", studentId: "s1", appliedDate: "2024-04-22", status: "Shortlisted", notes: "Selected for Round 2 Technical" },
+  { id: "app5", driveId: "pd3", studentId: "s8", appliedDate: "2024-04-01", status: "Offered", notes: "Offered L&T Core Role" },
+];
+
+// ─── Broadcast Alert Templates ──────────────────────────────────────────────
+export interface BroadcastAlert {
+  id: string;
+  title: string;
+  category: "attendance" | "fee" | "exam" | "placement" | "urgent";
+  subject: string;
+  message: string;
+  targetAudience: "all" | "low_attendance" | "fee_pending" | "final_year" | "custom";
+  channels: ("whatsapp" | "sms" | "email")[];
+  createdAt: string;
+  sentCount: number;
+  status: "Sent" | "Scheduled" | "Draft";
+}
+
+export const INITIAL_BROADCAST_ALERTS: BroadcastAlert[] = [
+  {
+    id: "ba1",
+    title: "Attendance Shortage Critical Warning",
+    category: "attendance",
+    subject: "Urgent: Attendance Below 75% Notice",
+    message: "Dear Student/Parent, Your current attendance is below the mandatory 75% threshold. Please meet your HOD immediately to avoid exam debarment.",
+    targetAudience: "low_attendance",
+    channels: ["whatsapp", "sms", "email"],
+    createdAt: "2024-04-18",
+    sentCount: 24,
+    status: "Sent",
+  },
+  {
+    id: "ba2",
+    title: "Semester Fee Due Reminder",
+    category: "fee",
+    subject: "Reminder: Semester Fee Clearance Deadline",
+    message: "Dear Student, Kindly clear your outstanding semester tuition fees before 25th April to avoid late fee penalties and hall ticket hold.",
+    targetAudience: "fee_pending",
+    channels: ["whatsapp", "email"],
+    createdAt: "2024-04-15",
+    sentCount: 38,
+    status: "Sent",
+  },
+  {
+    id: "ba3",
+    title: "Google Cloud Campus Drive Registration Open",
+    category: "placement",
+    subject: "Google Cloud Placement Drive - Register Now",
+    message: "Eligible Final Year CS/EC students (CGPA >= 8.0, zero backlogs) are invited to register for the Google Cloud campus recruitment drive before 15th May.",
+    targetAudience: "final_year",
+    channels: ["whatsapp", "email"],
+    createdAt: "2024-04-20",
+    sentCount: 52,
+    status: "Sent",
+  },
+];
+

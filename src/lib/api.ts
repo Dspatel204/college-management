@@ -12,7 +12,15 @@ import {
   INITIAL_FEES,
   EXAM_SCHEDULES,
   EXAM_RESULTS,
+  INITIAL_PLACEMENT_DRIVES,
+  INITIAL_STUDENT_PLACEMENTS,
+  INITIAL_APPLICATIONS,
+  INITIAL_BROADCAST_ALERTS,
   calculateGrade,
+  type PlacementDrive,
+  type StudentPlacementProfile,
+  type PlacementApplication,
+  type BroadcastAlert,
 } from "@/lib/college-data";
 
 // ─── Backend Axios Client (Commented for standalone frontend execution) ──────
@@ -48,6 +56,10 @@ const KEYS = {
   FEES: "college_fees_data",
   EXAMS: "college_exams_data",
   RESULTS: "college_results_data",
+  PLACEMENT_DRIVES: "college_placement_drives",
+  STUDENT_PLACEMENTS: "college_student_placements",
+  APPLICATIONS: "college_placement_applications",
+  BROADCAST_ALERTS: "college_broadcast_alerts",
 };
 
 // ─── Storage Helpers ────────────────────────────────────────────────────────
@@ -1062,3 +1074,304 @@ export async function getReports(params?: { department?: string }): Promise<Repo
     },
   };
 }
+
+// ─── Placement & Career API ──────────────────────────────────────────────────
+export async function getPlacementDrives(): Promise<PlacementDrive[]> {
+  return getStore<PlacementDrive>(KEYS.PLACEMENT_DRIVES, INITIAL_PLACEMENT_DRIVES);
+}
+
+export async function createPlacementDrive(data: Omit<PlacementDrive, "id" | "registeredCount" | "shortlistedCount" | "placedCount">): Promise<PlacementDrive> {
+  const drives = getStore<PlacementDrive>(KEYS.PLACEMENT_DRIVES, INITIAL_PLACEMENT_DRIVES);
+  const newDrive: PlacementDrive = {
+    ...data,
+    id: "pd_" + Date.now(),
+    registeredCount: 0,
+    shortlistedCount: 0,
+    placedCount: 0,
+  };
+  const updated = [newDrive, ...drives];
+  setStore(KEYS.PLACEMENT_DRIVES, updated);
+  return newDrive;
+}
+
+export async function updatePlacementDrive(id: string, data: Partial<PlacementDrive>): Promise<PlacementDrive> {
+  const drives = getStore<PlacementDrive>(KEYS.PLACEMENT_DRIVES, INITIAL_PLACEMENT_DRIVES);
+  let updatedDrive: PlacementDrive | null = null;
+  const updated = drives.map((d) => {
+    if (d.id === id) {
+      updatedDrive = { ...d, ...data };
+      return updatedDrive;
+    }
+    return d;
+  });
+  setStore(KEYS.PLACEMENT_DRIVES, updated);
+  return updatedDrive || drives[0];
+}
+
+export async function getStudentPlacements(): Promise<StudentPlacementProfile[]> {
+  return getStore<StudentPlacementProfile>(KEYS.STUDENT_PLACEMENTS, INITIAL_STUDENT_PLACEMENTS);
+}
+
+export async function getPlacementApplications(): Promise<PlacementApplication[]> {
+  return getStore<PlacementApplication>(KEYS.APPLICATIONS, INITIAL_APPLICATIONS);
+}
+
+export async function applyForPlacementDrive(driveId: string, studentId: string): Promise<PlacementApplication> {
+  const apps = getStore<PlacementApplication>(KEYS.APPLICATIONS, INITIAL_APPLICATIONS);
+  const drives = getStore<PlacementDrive>(KEYS.PLACEMENT_DRIVES, INITIAL_PLACEMENT_DRIVES);
+
+  const existing = apps.find((a) => a.driveId === driveId && a.studentId === studentId);
+  if (existing) return existing;
+
+  const newApp: PlacementApplication = {
+    id: "app_" + Date.now(),
+    driveId,
+    studentId,
+    appliedDate: new Date().toISOString().split("T")[0],
+    status: "Applied",
+  };
+
+  setStore(KEYS.APPLICATIONS, [newApp, ...apps]);
+
+  // Update drive count
+  const updatedDrives = drives.map((d) => (d.id === driveId ? { ...d, registeredCount: d.registeredCount + 1 } : d));
+  setStore(KEYS.PLACEMENT_DRIVES, updatedDrives);
+
+  return newApp;
+}
+
+export async function updateApplicationStatus(id: string, status: PlacementApplication["status"], notes?: string): Promise<PlacementApplication> {
+  const apps = getStore<PlacementApplication>(KEYS.APPLICATIONS, INITIAL_APPLICATIONS);
+  let updatedApp: PlacementApplication | null = null;
+  const updated = apps.map((a) => {
+    if (a.id === id) {
+      updatedApp = { ...a, status, notes: notes !== undefined ? notes : a.notes };
+      return updatedApp;
+    }
+    return a;
+  });
+  setStore(KEYS.APPLICATIONS, updated);
+  return updatedApp || apps[0];
+}
+
+// ─── AI Academic Intelligence & Student 360° API ─────────────────────────────
+export interface AIStudentMetric {
+  student: Student;
+  attendanceRate: number;
+  totalClasses: number;
+  presentClasses: number;
+  avgMarks: number;
+  totalExams: number;
+  feePaidRate: number;
+  feeDue: number;
+  riskScore: number; // 0 (Safe) to 100 (Critical High Risk)
+  riskLevel: "High Risk" | "Moderate Risk" | "Safe / Good Standing" | "Top Performer";
+  riskFactors: string[];
+  recommendations: string[];
+  radarData: { metric: string; score: number }[];
+  placementEligibility: boolean;
+}
+
+export async function getAIStudentAnalytics(): Promise<{
+  metrics: AIStudentMetric[];
+  overview: {
+    highRiskCount: number;
+    moderateRiskCount: number;
+    safeCount: number;
+    topPerformerCount: number;
+    avgAttendance: number;
+    avgAcademicScore: number;
+    remedialNeededCount: number;
+  };
+}> {
+  const students = getStore<Student>(KEYS.STUDENTS, STUDENTS);
+  const attendance = getStore<AttendanceRecord>(KEYS.ATTENDANCE, INITIAL_ATTENDANCE);
+  const results = getStore<ExamResult>(KEYS.RESULTS, EXAM_RESULTS);
+  const fees = getStore<FeeRecord>(KEYS.FEES, INITIAL_FEES);
+
+  const metrics: AIStudentMetric[] = students.map((s) => {
+    const studentAtt = attendance.filter((a) => a.studentId === s.id);
+    const presentCount = studentAtt.filter((a) => a.status === "present").length;
+    const totalClasses = studentAtt.length || 10;
+    const attendanceRate = studentAtt.length > 0 ? Math.round((presentCount / studentAtt.length) * 100) : (s.id === "s3" ? 50 : 88);
+
+    const studentResults = results.filter((r) => r.studentId === s.id);
+    const avgMarks = studentResults.length > 0
+      ? Math.round(studentResults.reduce((sum, r) => sum + (r.marksObtained / r.totalMarks) * 100, 0) / studentResults.length)
+      : (s.id === "s3" ? 58 : 82);
+
+    const studentFees = fees.filter((f) => f.studentId === s.id);
+    const totalFee = studentFees.reduce((sum, f) => sum + f.amount, 0) || 50000;
+    const paidFee = studentFees.reduce((sum, f) => sum + f.paid, 0);
+    const feeDue = totalFee - paidFee;
+    const feePaidRate = totalFee > 0 ? Math.round((paidFee / totalFee) * 100) : 100;
+
+    // Multi-factor Risk Algorithm
+    // Attendance weight: 45%, Academics weight: 35%, Fee weight: 20%
+    let riskScore = 0;
+    const riskFactors: string[] = [];
+    const recommendations: string[] = [];
+
+    if (attendanceRate < 75) {
+      riskScore += (75 - attendanceRate) * 1.4;
+      riskFactors.push(`Critical Attendance Shortage (${attendanceRate}%)`);
+      recommendations.push("Issue Low Attendance Warning to Guardian");
+    }
+
+    if (avgMarks < 60) {
+      riskScore += (60 - avgMarks) * 1.2;
+      riskFactors.push(`Weak Academic Performance (Avg: ${avgMarks}%)`);
+      recommendations.push("Assign remedial coaching in weak core subjects");
+    }
+
+    if (feeDue > 25000) {
+      riskScore += 20;
+      riskFactors.push(`Pending Fee Balance (₹${feeDue.toLocaleString("en-IN")})`);
+      recommendations.push("Send fee payment schedule reminder or evaluate installment");
+    }
+
+    riskScore = Math.min(100, Math.round(riskScore));
+
+    let riskLevel: AIStudentMetric["riskLevel"] = "Safe / Good Standing";
+    if (riskScore >= 45 || attendanceRate < 65) {
+      riskLevel = "High Risk";
+    } else if (riskScore >= 20 || attendanceRate < 75) {
+      riskLevel = "Moderate Risk";
+    } else if (avgMarks >= 85 && attendanceRate >= 85) {
+      riskLevel = "Top Performer";
+      recommendations.push("Nominate for Department Honors / Merit Scholarship");
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push("Student is on-track; maintain current academic progression");
+    }
+
+    const radarData = [
+      { metric: "Attendance", score: attendanceRate },
+      { metric: "Academics", score: avgMarks },
+      { metric: "Fee Clearance", score: feePaidRate },
+      { metric: "Discipline", score: attendanceRate >= 80 ? 95 : 70 },
+      { metric: "Consistency", score: Math.round((attendanceRate + avgMarks) / 2) },
+    ];
+
+    const placementEligibility = attendanceRate >= 75 && avgMarks >= 65 && feeDue === 0;
+
+    return {
+      student: s,
+      attendanceRate,
+      totalClasses,
+      presentClasses: studentAtt.length ? presentCount : Math.round((attendanceRate / 100) * totalClasses),
+      avgMarks,
+      totalExams: studentResults.length || 2,
+      feePaidRate,
+      feeDue,
+      riskScore,
+      riskLevel,
+      riskFactors,
+      recommendations,
+      radarData,
+      placementEligibility,
+    };
+  });
+
+  const highRiskCount = metrics.filter((m) => m.riskLevel === "High Risk").length;
+  const moderateRiskCount = metrics.filter((m) => m.riskLevel === "Moderate Risk").length;
+  const safeCount = metrics.filter((m) => m.riskLevel === "Safe / Good Standing").length;
+  const topPerformerCount = metrics.filter((m) => m.riskLevel === "Top Performer").length;
+  const avgAttendance = Math.round(metrics.reduce((s, m) => s + m.attendanceRate, 0) / (metrics.length || 1));
+  const avgAcademicScore = Math.round(metrics.reduce((s, m) => s + m.avgMarks, 0) / (metrics.length || 1));
+  const remedialNeededCount = metrics.filter((m) => m.avgMarks < 60 || m.attendanceRate < 75).length;
+
+  return {
+    metrics,
+    overview: {
+      highRiskCount,
+      moderateRiskCount,
+      safeCount,
+      topPerformerCount,
+      avgAttendance,
+      avgAcademicScore,
+      remedialNeededCount,
+    },
+  };
+}
+
+export async function askAICollegeHub(query: string): Promise<{
+  answer: string;
+  matchedStudents?: Student[];
+  actionSuggestion?: string;
+  category: "attendance" | "fees" | "academics" | "placement" | "general";
+}> {
+  const { metrics } = await getAIStudentAnalytics();
+  const q = query.toLowerCase();
+
+  if (q.includes("attendance") || q.includes("shortage") || q.includes("< 75") || q.includes("75%")) {
+    const lowAtt = metrics.filter((m) => m.attendanceRate < 75);
+    return {
+      answer: `Found ${lowAtt.length} students with attendance below 75% threshold across departments. Immediate intervention recommended to prevent exam debarment.`,
+      matchedStudents: lowAtt.map((m) => m.student),
+      actionSuggestion: "Send Attendance Warning via Broadcast Center",
+      category: "attendance",
+    };
+  }
+
+  if (q.includes("fee") || q.includes("pending") || q.includes("due") || q.includes("unpaid")) {
+    const pending = metrics.filter((m) => m.feeDue > 0);
+    const totalPending = pending.reduce((s, m) => s + m.feeDue, 0);
+    return {
+      answer: `There are ${pending.length} students with outstanding fees totaling ₹${totalPending.toLocaleString("en-IN")}.`,
+      matchedStudents: pending.map((m) => m.student),
+      actionSuggestion: "Trigger 1-Click Fee Due Reminders",
+      category: "fees",
+    };
+  }
+
+  if (q.includes("top") || q.includes("merit") || q.includes("scholarship") || q.includes("best") || q.includes("a+")) {
+    const top = metrics.filter((m) => m.avgMarks >= 80);
+    return {
+      answer: `${top.length} students qualify as Academic Honors / Top Performers with average marks >= 80%.`,
+      matchedStudents: top.map((m) => m.student),
+      actionSuggestion: "Generate Merit Certificates",
+      category: "academics",
+    };
+  }
+
+  if (q.includes("placement") || q.includes("eligible") || q.includes("job") || q.includes("drive")) {
+    const eligible = metrics.filter((m) => m.placementEligibility);
+    return {
+      answer: `${eligible.length} students satisfy all placement criteria (Attendance >= 75%, Marks >= 65%, Zero Fee Dues).`,
+      matchedStudents: eligible.map((m) => m.student),
+      actionSuggestion: "Enroll in Upcoming Google & Microsoft Drives",
+      category: "placement",
+    };
+  }
+
+  const highRisk = metrics.filter((m) => m.riskLevel === "High Risk");
+  return {
+    answer: `Analysis complete: College health score is 84%. Currently ${highRisk.length} students require proactive faculty mentoring due to attendance and academic lag.`,
+    matchedStudents: highRisk.map((m) => m.student),
+    actionSuggestion: "Review 360° Student Dossiers in Early Warning Hub",
+    category: "general",
+  };
+}
+
+// ─── Broadcast Alert Center API ──────────────────────────────────────────────
+export async function getBroadcastAlerts(): Promise<BroadcastAlert[]> {
+  return getStore<BroadcastAlert>(KEYS.BROADCAST_ALERTS, INITIAL_BROADCAST_ALERTS);
+}
+
+export async function sendBroadcastAlert(alert: Omit<BroadcastAlert, "id" | "createdAt" | "sentCount" | "status"> & { recipientCount?: number }): Promise<BroadcastAlert> {
+  const alerts = getStore<BroadcastAlert>(KEYS.BROADCAST_ALERTS, INITIAL_BROADCAST_ALERTS);
+  const newAlert: BroadcastAlert = {
+    ...alert,
+    id: "ba_" + Date.now(),
+    createdAt: new Date().toISOString().split("T")[0],
+    sentCount: alert.recipientCount || 35,
+    status: "Sent",
+  };
+
+  const updated = [newAlert, ...alerts];
+  setStore(KEYS.BROADCAST_ALERTS, updated);
+  return newAlert;
+}
+

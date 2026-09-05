@@ -6,10 +6,15 @@ import {
   LayoutDashboard, Users, ClipboardCheck, BookOpen, Settings, LogOut,
   GraduationCap, IndianRupee, FileText, BarChart3, UserCog,
   Megaphone, Library, Bus, MessageSquare, Sun, Moon,
+  Sparkles, Briefcase, QrCode, Radio,
 } from "lucide-react";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/ai-insights", label: "AI 360° & Risk Hub", icon: Sparkles, badge: "AI" },
+  { to: "/placement", label: "Placement Portal", icon: Briefcase, badge: "Career" },
+  { to: "/credentials", label: "Digital ID & Tickets", icon: QrCode },
+  { to: "/broadcast", label: "Alert & Broadcast", icon: Radio },
   { to: "/students", label: "Students", icon: Users },
   { to: "/faculty", label: "Faculty", icon: UserCog },
   { to: "/attendance", label: "Attendance", icon: ClipboardCheck },
@@ -69,7 +74,12 @@ export function AppSidebar({ open, onClose }: { open?: boolean; onClose?: () => 
               className={`flex items-center gap-2.5 sm:gap-3 rounded-lg px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-medium transition-all truncate ${isActive ? "bg-sidebar-accent text-sidebar-primary" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"}`}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <span className="truncate flex-1">{item.label}</span>
+              {"badge" in item && item.badge && (
+                <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           );
         })}
