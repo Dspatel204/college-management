@@ -7,13 +7,14 @@ import {
   GraduationCap, IndianRupee, FileText, BarChart3, UserCog,
   Megaphone, Library, Bus, MessageSquare, Sun, Moon,
   Sparkles, Briefcase, QrCode, Radio,
-  Trophy, Building, Globe, HelpCircle,
+  Trophy, Building, Globe, HelpCircle, BookOpenCheck,
   Landmark, HandCoins, Laptop, ShieldAlert,
   PartyPopper, ClockCheck,
 } from "lucide-react";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/academic-planner", label: "Academic Planner", icon: BookOpenCheck, badge: "Tasks" },
   { to: "/ai-insights", label: "AI 360° & Risk Hub", icon: Sparkles, badge: "AI" },
   { to: "/smart-attendance", label: "Smart Attendance & Leaves", icon: ClockCheck, badge: "Kiosk" },
   { to: "/events-clubs", label: "Clubs & Campus Fests", icon: PartyPopper, badge: "Life" },

@@ -54,6 +54,7 @@ export function hasPermission(role: Role | undefined, permission: Permission): b
 /** Nav items visible per role */
 export const NAV_PERMISSIONS: Record<string, Role[]> = {
   "/dashboard": ["admin", "teacher", "student"],
+  "/academic-planner": ["admin", "teacher", "student"],
   "/ai-insights": ["admin", "teacher"],
   "/leaderboard": ["admin", "teacher", "student"],
   "/placement": ["admin", "teacher", "student"],

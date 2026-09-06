@@ -36,6 +36,7 @@ import { Route as AlumniRouteImport } from './routes/alumni'
 import { Route as AiQuizRouteImport } from './routes/ai-quiz'
 import { Route as AiInsightsRouteImport } from './routes/ai-insights'
 import { Route as AccreditationRouteImport } from './routes/accreditation'
+import { Route as AcademicPlannerRouteImport } from './routes/academic-planner'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TransportRoute = TransportRouteImport.update({
@@ -173,6 +174,11 @@ const AccreditationRoute = AccreditationRouteImport.update({
   path: '/accreditation',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcademicPlannerRoute = AcademicPlannerRouteImport.update({
+  id: '/academic-planner',
+  path: '/academic-planner',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -181,6 +187,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/academic-planner': typeof AcademicPlannerRoute
   '/accreditation': typeof AccreditationRoute
   '/ai-insights': typeof AiInsightsRoute
   '/ai-quiz': typeof AiQuizRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/academic-planner': typeof AcademicPlannerRoute
   '/accreditation': typeof AccreditationRoute
   '/ai-insights': typeof AiInsightsRoute
   '/ai-quiz': typeof AiQuizRoute
@@ -242,6 +250,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/academic-planner': typeof AcademicPlannerRoute
   '/accreditation': typeof AccreditationRoute
   '/ai-insights': typeof AiInsightsRoute
   '/ai-quiz': typeof AiQuizRoute
@@ -274,6 +283,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/academic-planner'
     | '/accreditation'
     | '/ai-insights'
     | '/ai-quiz'
@@ -304,6 +314,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/academic-planner'
     | '/accreditation'
     | '/ai-insights'
     | '/ai-quiz'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/academic-planner'
     | '/accreditation'
     | '/ai-insights'
     | '/ai-quiz'
@@ -365,6 +377,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcademicPlannerRoute: typeof AcademicPlannerRoute
   AccreditationRoute: typeof AccreditationRoute
   AiInsightsRoute: typeof AiInsightsRoute
   AiQuizRoute: typeof AiQuizRoute
@@ -585,6 +598,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccreditationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/academic-planner': {
+      id: '/academic-planner'
+      path: '/academic-planner'
+      fullPath: '/academic-planner'
+      preLoaderRoute: typeof AcademicPlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -597,6 +617,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcademicPlannerRoute: AcademicPlannerRoute,
   AccreditationRoute: AccreditationRoute,
   AiInsightsRoute: AiInsightsRoute,
   AiQuizRoute: AiQuizRoute,
