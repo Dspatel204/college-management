@@ -66,7 +66,7 @@ export function AppSidebar({ open, onClose }: { open?: boolean; onClose?: () => 
         fixed left-0 top-0 z-50 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground
         transition-transform duration-300 ease-in-out
         ${open ? "translate-x-0" : "-translate-x-full"}
-        sm:hidden
+        lg:hidden
       `}
     >
       <div className="flex items-center gap-3 border-b border-sidebar-border px-4 py-4">
