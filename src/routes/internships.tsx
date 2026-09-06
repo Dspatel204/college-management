@@ -40,6 +40,7 @@ import {
   Sparkles,
   MapPin,
   IndianRupee,
+  Users,
 } from "lucide-react";
 
 export const Route = createFileRoute("/internships")({
