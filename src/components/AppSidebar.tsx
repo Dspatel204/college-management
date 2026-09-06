@@ -17,7 +17,6 @@ export const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/academic-planner", label: "Academic Planner", icon: BookOpenCheck, badge: "Tasks" },
   { to: "/ai-insights", label: "AI 360° & Risk Hub", icon: Sparkles, badge: "AI" },
-  { to: "/smart-attendance", label: "Smart Attendance & Leaves", icon: ClockCheck, badge: "Kiosk" },
   { to: "/library", label: "Digital Library & NDL", icon: Library, badge: "Books" },
   { to: "/transport", label: "Bus Fleet & Tracking", icon: Bus, badge: "GPS" },
   { to: "/leaderboard", label: "Leaderboard & Badges", icon: Trophy, badge: "XP" },
@@ -45,7 +44,7 @@ export const navItems = [
 
 export const navGroups = [
   { label: "Overview", items: ["/dashboard", "/academic-planner", "/ai-insights", "/reports"] },
-  { label: "Academic", items: ["/students", "/faculty", "/attendance", "/smart-attendance", "/courses", "/exams", "/ai-quiz", "/library"] },
+  { label: "Academic", items: ["/students", "/faculty", "/attendance", "/courses", "/exams", "/ai-quiz", "/library"] },
   { label: "Campus", items: ["/transport", "/hostel", "/credentials", "/notices", "/messages", "/grievance-cell"] },
   { label: "Career & Community", items: ["/placement", "/internships", "/scholarships", "/leaderboard", "/alumni", "/accreditation"] },
   { label: "Finance & Admin", items: ["/fees", "/broadcast", "/settings"] },

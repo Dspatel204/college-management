@@ -24,16 +24,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 shadow-sm backdrop-blur-md">
         <div className="mx-auto grid min-h-16 max-w-[1600px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 sm:px-6 lg:flex lg:px-8">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 shrink-0 lg:hidden"
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Open navigation menu"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        <Link to="/dashboard" className="order-first flex min-w-0 items-center gap-3 lg:order-none lg:shrink-0" aria-label="CollegeHub dashboard">
+        <Link to="/dashboard" className="flex min-w-0 items-center gap-3 lg:shrink-0" aria-label="CollegeHub dashboard">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary shadow-sm">
             <GraduationCap className="h-5 w-5 text-primary-foreground" />
           </div>
@@ -69,11 +60,20 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             <p className="max-w-28 truncate text-xs font-semibold text-foreground">{user?.name}</p>
             <p className="text-[10px] capitalize text-muted-foreground">{user?.role}</p>
           </div>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">
+          <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground lg:flex">
             {user?.name.split(" ").map((part) => part[0]).join("")}
           </div>
-          <Button variant="ghost" size="icon" aria-label="Log out" onClick={logout} className="h-9 w-9">
+          <Button variant="ghost" size="icon" aria-label="Log out" onClick={logout} className="hidden h-9 w-9 lg:inline-flex">
             <LogOut className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 lg:hidden"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open navigation menu"
+          >
+            <Menu className="h-5 w-5" />
           </Button>
         </div>
         </div>
