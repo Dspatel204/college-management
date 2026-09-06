@@ -12,7 +12,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const visibleItems = navItems.filter((item) => {
-    const group = navGroups.find((candidate) => candidate.items.includes(item.to));
+    const group = navGroups.find((candidate) => candidate.items.some((path) => path === item.to));
     return Boolean(group) && canAccessRoute(user?.role, item.to);
   });
   const getItem = (path: string) => visibleItems.find((item) => item.to === path);

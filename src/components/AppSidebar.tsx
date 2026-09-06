@@ -10,7 +10,7 @@ import {
   Sparkles, Briefcase, QrCode, Radio,
   Trophy, Building, Globe, HelpCircle, BookOpenCheck,
   Landmark, HandCoins, Laptop, ShieldAlert,
-  PartyPopper, ClockCheck, X,
+  ClockCheck, X,
 } from "lucide-react";
 
 export const navItems = [
@@ -18,7 +18,6 @@ export const navItems = [
   { to: "/academic-planner", label: "Academic Planner", icon: BookOpenCheck, badge: "Tasks" },
   { to: "/ai-insights", label: "AI 360° & Risk Hub", icon: Sparkles, badge: "AI" },
   { to: "/smart-attendance", label: "Smart Attendance & Leaves", icon: ClockCheck, badge: "Kiosk" },
-  { to: "/events-clubs", label: "Clubs & Campus Fests", icon: PartyPopper, badge: "Life" },
   { to: "/library", label: "Digital Library & NDL", icon: Library, badge: "Books" },
   { to: "/transport", label: "Bus Fleet & Tracking", icon: Bus, badge: "GPS" },
   { to: "/leaderboard", label: "Leaderboard & Badges", icon: Trophy, badge: "XP" },
@@ -47,7 +46,7 @@ export const navItems = [
 export const navGroups = [
   { label: "Overview", items: ["/dashboard", "/academic-planner", "/ai-insights", "/reports"] },
   { label: "Academic", items: ["/students", "/faculty", "/attendance", "/smart-attendance", "/courses", "/exams", "/ai-quiz", "/library"] },
-  { label: "Campus", items: ["/events-clubs", "/transport", "/hostel", "/credentials", "/notices", "/messages", "/grievance-cell"] },
+  { label: "Campus", items: ["/transport", "/hostel", "/credentials", "/notices", "/messages", "/grievance-cell"] },
   { label: "Career & Community", items: ["/placement", "/internships", "/scholarships", "/leaderboard", "/alumni", "/accreditation"] },
   { label: "Finance & Admin", items: ["/fees", "/broadcast", "/settings"] },
 ] as const;
@@ -102,7 +101,7 @@ export function AppSidebar({ open, onClose }: { open?: boolean; onClose?: () => 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
         {navGroups.map((group) => {
           const items = navItems.filter(
-            (item) => group.items.includes(item.to) && canAccessRoute(user?.role, item.to),
+            (item) => group.items.some((path) => path === item.to) && canAccessRoute(user?.role, item.to),
           );
           if (items.length === 0) return null;
           return (
