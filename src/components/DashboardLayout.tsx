@@ -1,12 +1,38 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { AppSidebar, navGroups, navItems } from "./AppSidebar";
 import { useAuth } from "@/lib/auth-context";
 import { canAccessRoute } from "@/lib/permissions";
 import { useTheme } from "@/lib/theme-provider";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Menu, ChevronDown, LogOut } from "lucide-react";
-import { useState } from "react";
+import {
+  GraduationCap,
+  Menu,
+  ChevronDown,
+  LogOut,
+  Search,
+  X,
+  Command,
+  ShieldCheck,
+} from "lucide-react";
+
+const campusAlerts = [
+  {
+    title: "Semester registration deadline",
+    detail: "Final-year students must complete registration before Friday 5:00 PM.",
+    tone: "bg-amber-500",
+  },
+  {
+    title: "Transport schedule update",
+    detail: "Route 7 has been rerouted due to maintenance near the east gate.",
+    tone: "bg-emerald-500",
+  },
+  {
+    title: "Fee reminder",
+    detail: "Outstanding library dues of ₹1,250 were added to the student ledger.",
+    tone: "bg-rose-500",
+  },
+] as const;
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
